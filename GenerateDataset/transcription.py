@@ -1,16 +1,30 @@
+import os
 import whisper
 import ffmpeg
 
-def extract_audio(path, title):
-    extracted_audio = f"/{title}/audio-{title}.wav"
-    stream = ffmpeg.input(path)
-    stream = ffmpeg.output(stream, extracted_audio)
+# Optionally, ensure PyTorch warning mitigation
+import torch
+original_torch_load = torch.load
+
+def safe_torch_load(*args, **kwargs):
+    kwargs["weights_only"] = True  # Ensures weights-only loading when possible
+    return original_torch_load(*args, **kwargs)
+
+torch.load = safe_torch_load  # Override torch.load globally
+
+def cleanpathvideo(path_video):
+    # Extract the filename from the full path
+    return os.path.basename(path_video)
+
+def extract_audio(input_file, output_audio):
+    stream = ffmpeg.input(input_file)
+    stream = ffmpeg.output(stream, output_audio)
     ffmpeg.run(stream, overwrite_output=True)
-    return extracted_audio
+    return output_audio
 
 def transcribe_with_timestamps(file_path):
     # Load the Whisper model
-    model = whisper.load_model("large")  # Use "large" for higher accuracy if resources allow
+    model = whisper.load_model("base")  # Use "large" for higher accuracy if resources allow
 
     # Transcribe the audio with timestamps
     print("Transcribing audio with timestamps...")
@@ -20,40 +34,31 @@ def transcribe_with_timestamps(file_path):
     segments = result["segments"]
     return segments
 
-def save_as_srt(segments):
-    output_file ="transcription.srt"
-    print(f"Saving transcription to {output_file}...")
-    
-    with open(output_file, "w", encoding="utf-8") as srt_file:
-        for i, segment in enumerate(segments):
-            # Convert timestamps to SRT format
-            start_time = format_timestamp(segment["start"])
-            end_time = format_timestamp(segment["end"])
+def save_as_txt_with_seconds(segments, output_file):
+    print(f"Saving timestamps and text to {output_file}...")
+    with open(output_file, "w", encoding="utf-8") as txt_file:
+        for segment in segments:
+            # Extract start time, end time, and text
+            start_time = segment["start"]
+            end_time = segment["end"]
             text = segment["text"]
+            # Write times and text to the file
+            txt_file.write(f"{start_time:.3f},{end_time:.3f} -> {text}\n")
 
-            # Write each subtitle entry
-            srt_file.write(f"{i+1}\n")
-            srt_file.write(f"{start_time} --> {end_time}\n")
-            srt_file.write(f"{text}\n\n")
 
-def format_timestamp(seconds):
-    # Convert seconds to H:M:S,ms format
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = int(seconds % 60)
-    milliseconds = int((seconds % 1) * 1000)
-    return f"{hours:02}:{minutes:02}:{seconds:02},{milliseconds:03}"
-
-if __name__ == "__main__":
-    audio_file = "audio-NoticiaPeru.wav"  # Replace with your WAV file path
-    output_srt = "transcriptionPeru.srt"  # Output SRT file name
+def get_subtitles(path_video, number):
+    filename = cleanpathvideo(path_video)
+    output_audio = f"../Data/video{number}/audio{number}.wav"
+    output_txt = f"../Data/video{number}/timestamps{number}.txt"
 
     try:
-        segments = transcribe_with_timestamps(audio_file)
-        save_as_srt(segments, output_srt)
-        print(f"Transcription saved to {output_srt}")
+        # Extract audio from video
+        extract_audio(path_video, output_audio)
+        # Transcribe audio and get timestamps
+        segments = transcribe_with_timestamps(output_audio)
+        # Save timestamps to a text file
+        save_as_txt_with_seconds(segments, output_txt)
+        print(f"Timestamps saved to {output_txt}")
+        return output_txt
     except Exception as e:
         print("An error occurred:", e)
-
-def getSubtitles(pathVideo, title):
-    extract_audio(title)
