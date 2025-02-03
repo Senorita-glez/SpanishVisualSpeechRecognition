@@ -306,7 +306,23 @@ def create_dataset():
     json_file_path = "./Data/videos_metadata.json"
     folder_path = "./Data"
     links = [
-        'https://youtube.com/shorts/bLXWSZj9mXc?si=zzqc5Mo7YREVfMOE'
+        'https://youtu.be/1eZepcg6aC0?si=TcdsKsWm80oo6zCO', 
+        'https://youtu.be/394xoTdXa_E?si=bFau2rJUZ1LgUPSp', 
+        'https://youtu.be/ubDIW5Q5Ig4?si=H9Q6nEz0E7bdYJSq', 
+        'https://youtu.be/ZD8VJJI4KGA?si=H1R6Wbf9gVPFETqE', 
+        'https://youtu.be/-XwPjL3xmmk?si=MjZ2J9ZBS6lfYepO',
+        'https://youtu.be/-8Azsx40S08?si=5Yp0jp8DdYQlqtop',
+        'https://youtu.be/CsyCsBo12co?si=v8Oe43GestaAfVuI',
+        'https://youtu.be/d2bk-6nxZQs?si=Dm-KM8ZWlwaQhMZ0',
+        'https://youtu.be/v6K8iXIfbVo?si=QHZfH5SYn6ZPv9HN',
+        'https://youtu.be/RdwZJML_UYE?si=Tiv9_BiBIQdh1TaM',
+        'https://youtu.be/dQ7lQfqhYXA?si=Fy3eeR1y96OJ4fJs', 
+        'https://youtu.be/UFaAfDcLg7I?si=QTwLIFqLL5-cGd6z',
+        'https://youtu.be/UFaAfDcLg7I?si=NKICu9fEl-tx9-li', 
+        'https://youtu.be/T_rcvW6EAEA?si=2KUR2qAWgC9vrAxX',
+        'https://youtu.be/xtyIS8kBC1A?si=nYunXBEGUVtZoVnN',
+        'https://youtu.be/wOyiOiR0Ouo?si=tqXc1_ZYHijWlRzr',
+        'https://youtu.be/lT1WMFcXywc?si=dJpSC8aikaNU054Q'
     ]
 
     # Crear la carpeta si no existe
