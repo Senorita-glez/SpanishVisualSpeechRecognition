@@ -3,11 +3,11 @@ import subprocess
 import json
 import yt_dlp
 import re
-import os
-import os
 import whisper
 import ffmpeg
 import torch
+import time
+torch.cuda.empty_cache()
 import threading
 original_torch_load = torch.load
 
@@ -61,23 +61,24 @@ def save_as_txt_with_seconds(segments, output_file):
             # Write times and text to the file
             txt_file.write(f"{start_time:.3f},{end_time:.3f} -> {text}\n")
 
-
-def get_subtitles(path_video, number):
-    #filename = cleanpathvideo(path_video)
+def get_subtitles(path_video, number, lock):
     output_audio = f"./Data/video{number}/audio{number}.wav"
     output_txt = f"./Data/video{number}/timestamps{number}.txt"
 
-    try:
-        # Extract audio from video
-        extract_audio(path_video, output_audio)
-        # Transcribe audio and get timestamps
-        segments = transcribe_with_timestamps(output_audio)
-        # Save timestamps to a text file
-        save_as_txt_with_seconds(segments, output_txt)
-        #print(f"Timestamps saved to {output_txt}")
-        return output_txt
-    except Exception as e:
-        print("An error occurred with timestamps:", e)
+    with lock:  # Prevent multiple threads from writing at the same time
+        try:
+            extract_audio(path_video, output_audio)
+            segments = transcribe_with_timestamps(output_audio)
+            save_as_txt_with_seconds(segments, output_txt)
+
+            if os.path.exists(output_txt):
+                return output_txt
+            else:
+                return None
+        except Exception as e:
+            print(f"An error occurred in get_subtitles(): {e}")
+            return None
+
 
 def sanitize_filename(filename):
     """Replace special characters in the filename with underscores."""
@@ -190,6 +191,9 @@ def recortar_video(transcription_file, video_file, save_path, id):
 
     results = {}
 
+    if transcription_file is None or not os.path.exists(transcription_file):
+        raise ValueError(f"Invalid path_subtitles: {transcription_file}")
+
     # Leer el archivo de transcripción y procesar las líneas
     with open(transcription_file, 'r', encoding='utf-8') as file:
         lines = file.readlines()
@@ -264,6 +268,8 @@ def save_video_data_to_json(new_result, new_subclips, json_file_path, lock):
 
     print(f"Datos actualizados guardados en {json_file_path}")
 
+import time
+import os
 
 def process_video(dupla, platform, json_file_path, lock):
     """Procesa un video, obteniendo subtítulos, subclips y guardando datos."""
@@ -276,20 +282,36 @@ def process_video(dupla, platform, json_file_path, lock):
     # Descargar el video
     try:
         result = DownloadVideo(url, platform, savepath)
-        print(f"Download result: {result}")
+        print(f"✅ Download result: {result}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"❌ An error occurred while downloading: {e}")
         return
 
     # Obtener subtítulos
-    path_subtitles = get_subtitles(result['file_path'], video_id)
+    path_subtitles = get_subtitles(result['file_path'], video_id, lock)
+
+    # 🔹 Ensure the subtitles file exists before continuing
+    wait_time = 0
+    max_wait = 900  # Wait up to 15 minutes (adjust if needed)
+    
+    while not path_subtitles or not os.path.exists(path_subtitles):
+        if wait_time > max_wait:
+            print(f"❌ ERROR: Subtitles file {path_subtitles} did not appear after {max_wait} seconds!")
+            return  # Stop processing this video
+        print(f"⏳ Waiting for subtitles file {path_subtitles}... ({wait_time}s)")
+        time.sleep(5)  # Wait for 5 seconds before checking again
+        wait_time += 5
+    
+    # ✅ Now that we are sure subtitles exist, process the video
+    print(f"🎬 Subtitles file ready: {path_subtitles}")
 
     # Recortar el video usando los subtítulos
     subclips = recortar_video(path_subtitles, result['file_path'], savepath, video_id)
-    print(subclips)
+    print(f"✅ Subclips created: {subclips}")
 
     # Guardar los datos en el archivo JSON
     save_video_data_to_json(result, subclips, json_file_path, lock)
+    print(f"📁 Video metadata saved: {json_file_path}")
 
 
 def divide_links(links, num_threads):
@@ -349,7 +371,7 @@ def create_dataset():
     PLAAC7fSa2ntKUjtze8ufLhDj8l8MnXhOF
 
     '''
-    links = fromPlaylistToLinks("https://www.youtube.com/playlist?list=PLxep90LjGgt8ipF2bO5LPWKigA4ckBlyh")
+    links = fromPlaylistToLinks("https://www.youtube.com/playlist?list=PLAAC7fSa2ntKUjtze8ufLhDj8l8MnXhOF")
     # Crear la carpeta si no existe
     os.makedirs(folder_path, exist_ok=True)
 
