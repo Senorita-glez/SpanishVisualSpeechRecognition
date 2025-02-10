@@ -1,0 +1,490 @@
+{
+    "videos": [
+        {
+            "video_metadata": {
+                "file_path": "./Data/video0/Que_NO_hacer_en_un_demo_de_voz___actrizdedoblaje__cristinahernandez__doblaje.mp4",
+                "title": "Que_NO_hacer_en_un_demo_de_voz___actrizdedoblaje__cristinahernandez__doblaje",
+                "duration": 45,
+                "subclips": {
+                    "./Data/video0/clip_0-1.mp4": {
+                        "text": "Hola, yo soy Cristina Armandez, soy actriz de doblaje y soy directora de doblaje.",
+                        "start_time": 0.0,
+                        "end_time": 4.56,
+                        "duration": 4.56
+                    },
+                    "./Data/video0/clip_0-2.mp4": {
+                        "text": "Y ahora te voy a decir que es lo que no necesito como directora en un demo de voz.",
+                        "start_time": 4.56,
+                        "end_time": 9.2,
+                        "duration": 4.64
+                    },
+                    "./Data/video0/clip_0-3.mp4": {
+                        "text": "Primero, no hay mites voces de otros actores, ya no necesitamos 50 marios casta\u00f1edas o cualquier",
+                        "start_time": 9.2,
+                        "end_time": 15.04,
+                        "duration": 5.84
+                    },
+                    "./Data/video0/clip_0-4.mp4": {
+                        "text": "otra actor que te salga a la voz. No es necesario, ya tenemos a ese muestra me tu voz,",
+                        "start_time": 15.04,
+                        "end_time": 19.2,
+                        "duration": 4.16
+                    },
+                    "./Data/video0/clip_0-5.mp4": {
+                        "text": "que es lo que t\u00fa puedes crear con tu voz. Eso es muy importante, eso te va a ser brillar.",
+                        "start_time": 19.2,
+                        "end_time": 23.44,
+                        "duration": 4.240000000000002
+                    },
+                    "./Data/video0/clip_0-6.mp4": {
+                        "text": "Necesito que si me vas a decir que hablas otros idiomas, me muestre que hablas otros idiomas,",
+                        "start_time": 23.44,
+                        "end_time": 29.76,
+                        "duration": 6.32
+                    },
+                    "./Data/video0/clip_0-7.mp4": {
+                        "text": "por favor no me pongas. Hola, yo hablas 50 idiomas y luego tampoco necesito que me digas que tienes",
+                        "start_time": 29.76,
+                        "end_time": 34.88,
+                        "duration": 5.120000000000001
+                    },
+                    "./Data/video0/clip_0-8.mp4": {
+                        "text": "un estudio, una cabina que llevas 4 a\u00f1os en el medio cuando en realidad me estoy dando cuenta que no",
+                        "start_time": 34.88,
+                        "end_time": 39.6,
+                        "duration": 4.719999999999999
+                    },
+                    "./Data/video0/clip_0-9.mp4": {
+                        "text": "tienes una historia que contarme. Mejor, ev\u00eddate eso y cu\u00e9ntame una gran historia. Solo tienes un minuto.",
+                        "start_time": 39.6,
+                        "end_time": 45.12,
+                        "duration": 5.519999999999996
+                    }
+                }
+            }
+        },
+        {
+            "video_metadata": {
+                "file_path": "./Data/video3/Le_regalaron_la_licencia___Qu\u00e9_opinas___entertainment__camiones__relsvideo__parati__automobile.mp4",
+                "title": "Le_regalaron_la_licencia___Qu\u00e9_opinas___entertainment__camiones__relsvideo__parati__automobile",
+                "duration": 28,
+                "subclips": {
+                    "./Data/video3/clip_3-1.mp4": {
+                        "text": "Si no est\u00e9 ubacque se ha dejado",
+                        "start_time": 0.0,
+                        "end_time": 3.76,
+                        "duration": 3.76
+                    },
+                    "./Data/video3/clip_3-2.mp4": {
+                        "text": "Pero que sea la pada si no quen\u00f3",
+                        "start_time": 3.76,
+                        "end_time": 7.32,
+                        "duration": 3.5600000000000005
+                    },
+                    "./Data/video3/clip_3-3.mp4": {
+                        "text": "Si no quen\u00f3, si no quen\u00f3",
+                        "start_time": 7.32,
+                        "end_time": 10.92,
+                        "duration": 3.5999999999999996
+                    },
+                    "./Data/video3/clip_3-4.mp4": {
+                        "text": "Nos ven en verg\u00fcenza por el sinc\u00f3n",
+                        "start_time": 10.92,
+                        "end_time": 14.16,
+                        "duration": 3.24
+                    },
+                    "./Data/video3/clip_3-5.mp4": {
+                        "text": "El pelo la reg\u00f3 y en un talla esn\u00f3n",
+                        "start_time": 14.16,
+                        "end_time": 18.4,
+                        "duration": 4.239999999999998
+                    },
+                    "./Data/video3/clip_3-6.mp4": {
+                        "text": "Tais los viviaturos y adentruntos",
+                        "start_time": 18.4,
+                        "end_time": 22.0,
+                        "duration": 3.6000000000000014
+                    }
+                }
+            }
+        },
+        {
+            "video_metadata": {
+                "file_path": "./Data/video1/Consejos_para_locutores_y_actores_de_doblaje_____actrizdedoblaje__cristinahernandez.mp4",
+                "title": "Consejos_para_locutores_y_actores_de_doblaje_____actrizdedoblaje__cristinahernandez",
+                "duration": 85,
+                "subclips": {
+                    "./Data/video1/clip_1-1.mp4": {
+                        "text": "Hola, yo soy Cristina Hern\u00e1ndez, hoy ya actriz de doblaje, soy directora de doblaje y tambi\u00e9n soy locutor comercial.",
+                        "start_time": 0.0,
+                        "end_time": 5.5,
+                        "duration": 5.5
+                    },
+                    "./Data/video1/clip_1-2.mp4": {
+                        "text": "Justo este es un consejo para todos aquellos que ya tomaron clases y que van a empezar en su carrera como locutores comerciales o como actores en doblaje.",
+                        "start_time": 5.5,
+                        "end_time": 14.5,
+                        "duration": 9.0
+                    },
+                    "./Data/video1/clip_1-3.mp4": {
+                        "text": "Es muy importante que sepas que para ser profesional, tienes que cobrar.",
+                        "start_time": 14.5,
+                        "end_time": 19.0,
+                        "duration": 4.5
+                    },
+                    "./Data/video1/clip_1-4.mp4": {
+                        "text": "No hay manera de que si est\u00e1s trabajando en una estaci\u00f3n de r\u00e1dio y est\u00e1s empezando, te digan, \u00a1oh, ya te toca hacer estas menciones!",
+                        "start_time": 19.0,
+                        "end_time": 25.5,
+                        "duration": 6.5
+                    },
+                    "./Data/video1/clip_1-5.mp4": {
+                        "text": "Vandentro de tu paquete, cualquier menci\u00f3n que salga a la aire, que sea un producto, viene un precio.",
+                        "start_time": 25.5,
+                        "end_time": 32.0,
+                        "duration": 6.5
+                    },
+                    "./Data/video1/clip_1-6.mp4": {
+                        "text": "Todos esos productos es como si estuvieras haciendo publicidad, todo eso deben pagarte lo extra.",
+                        "start_time": 32.0,
+                        "end_time": 36.5,
+                        "duration": 4.5
+                    },
+                    "./Data/video1/clip_1-7.mp4": {
+                        "text": "\u00bfNo dejes? Que nadie te diga, porque est\u00e1s empezando, no toca pagarte.",
+                        "start_time": 36.5,
+                        "end_time": 40.0,
+                        "duration": 3.5,
+                        "mouth_numpy": "./Data/processed/Mouth/clip_1-7_mouth.npz",
+                        "face_numpy": "./Data/processed/Face/clip_1-7_face.npz"
+                    },
+                    "./Data/video1/clip_1-8.mp4": {
+                        "text": "Eso no funciona as\u00ed, si sale a la aire se paga y pase exactamente lo mismo con doblaje.",
+                        "start_time": 40.0,
+                        "end_time": 45.0,
+                        "duration": 5.0
+                    },
+                    "./Data/video1/clip_1-9.mp4": {
+                        "text": "A veces las escuelas dicen esto es como parte de tus pr\u00e1cticas y entonces vamos a ponerte a ser ambientes,",
+                        "start_time": 45.0,
+                        "end_time": 50.5,
+                        "duration": 5.5
+                    },
+                    "./Data/video1/clip_1-10.mp4": {
+                        "text": "pero eso no lo cobras, \u00bfno? Si, si utilizan tu voz, la pagan.",
+                        "start_time": 50.5,
+                        "end_time": 53.5,
+                        "duration": 3.0,
+                        "mouth_numpy": "./Data/processed/Mouth/clip_1-10_mouth.npz",
+                        "face_numpy": "./Data/processed/Face/clip_1-10_face.npz"
+                    },
+                    "./Data/video1/clip_1-11.mp4": {
+                        "text": "Aunque sea un loop, hay momentos en los que tal vez t\u00fa quieras hacer un intercambio,",
+                        "start_time": 53.5,
+                        "end_time": 58.5,
+                        "duration": 5.0
+                    },
+                    "./Data/video1/clip_1-12.mp4": {
+                        "text": "porque existen los intercambios profesionales. Eso s\u00ed.",
+                        "start_time": 58.5,
+                        "end_time": 61.0,
+                        "duration": 2.5
+                    },
+                    "./Data/video1/clip_1-13.mp4": {
+                        "text": "Y entonces a lo mejor dice, \u00bfsabes qu\u00e9? Yo voy a ponerte esto y voy a grabar esto,",
+                        "start_time": 61.0,
+                        "end_time": 66.0,
+                        "duration": 5.0
+                    },
+                    "./Data/video1/clip_1-14.mp4": {
+                        "text": "pero a cambio, debes tener algo que atite con venza y que atite, ayude, acresera, hacer mejor.",
+                        "start_time": 66.0,
+                        "end_time": 71.5,
+                        "duration": 5.5
+                    },
+                    "./Data/video1/clip_1-15.mp4": {
+                        "text": "Pero no tiene que ser algo que te ofrezcan como tal, t\u00fa tienes que estar de acuerdo con lo que est\u00e1s recibiendo",
+                        "start_time": 71.5,
+                        "end_time": 77.5,
+                        "duration": 6.0
+                    },
+                    "./Data/video1/clip_1-16.mp4": {
+                        "text": "as\u00ed que es algo que vale con tu trabajo, pero si es importante que sepas, que si sale a la aire eso se pago.",
+                        "start_time": 77.5,
+                        "end_time": 82.5,
+                        "duration": 5.0
+                    },
+                    "./Data/video1/clip_1-17.mp4": {
+                        "text": "Y t\u00fa deber\u00edas recibir, paga.",
+                        "start_time": 82.5,
+                        "end_time": 84.5,
+                        "duration": 2.0
+                    }
+                }
+            }
+        },
+        {
+            "video_metadata": {
+                "file_path": "./Data/video2/Estetica_en_el_doblaje___actrizdedoblaje__cristinahernandez__directoradedoblaje.mp4",
+                "title": "Estetica_en_el_doblaje___actrizdedoblaje__cristinahernandez__directoradedoblaje",
+                "duration": 94,
+                "subclips": {
+                    "./Data/video2/clip_2-1.mp4": {
+                        "text": "Hola, yo soy Cristina Hernandez, soy actriz de doblaje y directora de doblaje.",
+                        "start_time": 0.0,
+                        "end_time": 3.94,
+                        "duration": 3.94
+                    },
+                    "./Data/video2/clip_2-2.mp4": {
+                        "text": "Es muy posible que de repente, cuando yo estoy en la sala,",
+                        "start_time": 3.94,
+                        "end_time": 6.4,
+                        "duration": 2.4600000000000004
+                    },
+                    "./Data/video2/clip_2-3.mp4": {
+                        "text": "tengo actores que diga,",
+                        "start_time": 6.4,
+                        "end_time": 8.0,
+                        "duration": 1.5999999999999996
+                    },
+                    "./Data/video2/clip_2-4.mp4": {
+                        "text": "\u00bfEst\u00e1 oy\u00e9ndose algo raro?",
+                        "start_time": 8.0,
+                        "end_time": 9.84,
+                        "duration": 1.8399999999999999
+                    },
+                    "./Data/video2/clip_2-5.mp4": {
+                        "text": "\u00bfTienes un piercing en Lanari?",
+                        "start_time": 9.84,
+                        "end_time": 11.74,
+                        "duration": 1.9000000000000004
+                    },
+                    "./Data/video2/clip_2-6.mp4": {
+                        "text": "Sorprendente, no?",
+                        "start_time": 11.74,
+                        "end_time": 13.0,
+                        "duration": 1.2599999999999998
+                    },
+                    "./Data/video2/clip_2-7.mp4": {
+                        "text": "De repente las cuestiones est\u00e9ticas afectan el sonido.",
+                        "start_time": 13.0,
+                        "end_time": 15.66,
+                        "duration": 2.66
+                    },
+                    "./Data/video2/clip_2-8.mp4": {
+                        "text": "Tener un piercing en Lanari, es lo cual a m\u00ed me parece hermoso.",
+                        "start_time": 15.66,
+                        "end_time": 18.54,
+                        "duration": 2.879999999999999
+                    },
+                    "./Data/video2/clip_2-9.mp4": {
+                        "text": "Si yo pudiera ponerme uno, me lo pondr\u00eda,",
+                        "start_time": 18.54,
+                        "end_time": 20.24,
+                        "duration": 1.6999999999999993
+                    },
+                    "./Data/video2/clip_2-10.mp4": {
+                        "text": "porque me parece guap\u00edsimo.",
+                        "start_time": 20.24,
+                        "end_time": 21.64,
+                        "duration": 1.4000000000000021
+                    },
+                    "./Data/video2/clip_2-11.mp4": {
+                        "text": "Pero eso afecta el sonido,",
+                        "start_time": 21.64,
+                        "end_time": 23.04,
+                        "duration": 1.3999999999999986
+                    },
+                    "./Data/video2/clip_2-12.mp4": {
+                        "text": "porque se hace como una vibraci\u00f3n",
+                        "start_time": 23.04,
+                        "end_time": 24.6,
+                        "duration": 1.5600000000000023
+                    },
+                    "./Data/video2/clip_2-13.mp4": {
+                        "text": "y como una salida de aire.",
+                        "start_time": 24.6,
+                        "end_time": 26.34,
+                        "duration": 1.7399999999999984
+                    },
+                    "./Data/video2/clip_2-14.mp4": {
+                        "text": "Y entonces empieces a escuchar diferente de hecho",
+                        "start_time": 26.34,
+                        "end_time": 28.4,
+                        "duration": 2.0599999999999987
+                    },
+                    "./Data/video2/clip_2-15.mp4": {
+                        "text": "para los ingenieros de repente es como,",
+                        "start_time": 28.4,
+                        "end_time": 29.84,
+                        "duration": 1.4400000000000013
+                    },
+                    "./Data/video2/clip_2-16.mp4": {
+                        "text": "\u00bfOye, es que est\u00e1 vibrando a Super Sing?",
+                        "start_time": 29.84,
+                        "end_time": 31.56,
+                        "duration": 1.7199999999999989
+                    },
+                    "./Data/video2/clip_2-17.mp4": {
+                        "text": "Y si se lo quitan, es como un silbidido.",
+                        "start_time": 31.56,
+                        "end_time": 33.4,
+                        "duration": 1.8399999999999999
+                    },
+                    "./Data/video2/clip_2-18.mp4": {
+                        "text": "Es muy simp\u00e1tico, \u00bfno?",
+                        "start_time": 33.4,
+                        "end_time": 35.84,
+                        "duration": 2.440000000000005
+                    },
+                    "./Data/video2/clip_2-19.mp4": {
+                        "text": "Ahora imag\u00ednate la gente que se tiene que inyectar",
+                        "start_time": 35.84,
+                        "end_time": 38.28,
+                        "duration": 2.4399999999999977
+                    },
+                    "./Data/video2/clip_2-20.mp4": {
+                        "text": "o que se quiere inyectar Botox.",
+                        "start_time": 38.28,
+                        "end_time": 40.04,
+                        "duration": 1.759999999999998
+                    },
+                    "./Data/video2/clip_2-21.mp4": {
+                        "text": "El Botox de alguna manera deja lacar un poquito m\u00e1s tensa.",
+                        "start_time": 40.04,
+                        "end_time": 43.56,
+                        "duration": 3.520000000000003
+                    },
+                    "./Data/video2/clip_2-22.mp4": {
+                        "text": "Entonces las expresiones de repente no son como tan flexibles.",
+                        "start_time": 43.56,
+                        "end_time": 46.72,
+                        "duration": 3.1599999999999966
+                    },
+                    "./Data/video2/clip_2-23.mp4": {
+                        "text": "Muchas veces tenemos que utilizar expresiones muy marcadas",
+                        "start_time": 46.72,
+                        "end_time": 49.8,
+                        "duration": 3.0799999999999983
+                    },
+                    "./Data/video2/clip_2-24.mp4": {
+                        "text": "y el Botox siento que le inita un poquito esa expresi\u00f3n.",
+                        "start_time": 49.8,
+                        "end_time": 52.96,
+                        "duration": 3.1600000000000037
+                    },
+                    "./Data/video2/clip_2-25.mp4": {
+                        "text": "Hay cosas est\u00e9ticas que no afectan tanto como los tatuajes, \u00bfno?",
+                        "start_time": 52.96,
+                        "end_time": 56.72,
+                        "duration": 3.759999999999998
+                    },
+                    "./Data/video2/clip_2-26.mp4": {
+                        "text": "O sea, si te vas a tatuarnos afecten absolutamente nada.",
+                        "start_time": 56.72,
+                        "end_time": 59.56,
+                        "duration": 2.8400000000000034
+                    },
+                    "./Data/video2/clip_2-27.mp4": {
+                        "text": "Hay algunas carillas que est\u00e1n tambi\u00e9n hechas",
+                        "start_time": 59.56,
+                        "end_time": 61.68,
+                        "duration": 2.1199999999999974
+                    },
+                    "./Data/video2/clip_2-28.mp4": {
+                        "text": "que tampoco afectan en nada.",
+                        "start_time": 61.68,
+                        "end_time": 63.24,
+                        "duration": 1.5600000000000023
+                    },
+                    "./Data/video2/clip_2-29.mp4": {
+                        "text": "Los brackets s\u00ed.",
+                        "start_time": 63.24,
+                        "end_time": 64.16,
+                        "duration": 0.9199999999999946
+                    },
+                    "./Data/video2/clip_2-30.mp4": {
+                        "text": "Si te pones brackets, claro que afecta totalmente",
+                        "start_time": 64.16,
+                        "end_time": 66.8,
+                        "duration": 2.6400000000000006
+                    },
+                    "./Data/video2/clip_2-31.mp4": {
+                        "text": "y tienen que como que aprender a gesticular un poco m\u00e1s,",
+                        "start_time": 66.8,
+                        "end_time": 69.52,
+                        "duration": 2.719999999999999
+                    },
+                    "./Data/video2/clip_2-32.mp4": {
+                        "text": "para exceder.",
+                        "start_time": 69.52,
+                        "end_time": 70.32,
+                        "duration": 0.7999999999999972
+                    },
+                    "./Data/video2/clip_2-33.mp4": {
+                        "text": "Como librar esos aparatos y que todo suene bien.",
+                        "start_time": 70.32,
+                        "end_time": 73.32,
+                        "duration": 3.0
+                    },
+                    "./Data/video2/clip_2-34.mp4": {
+                        "text": "Pero si hoy un poquito raro,",
+                        "start_time": 73.32,
+                        "end_time": 74.84,
+                        "duration": 1.5200000000000102
+                    },
+                    "./Data/video2/clip_2-35.mp4": {
+                        "text": "a veces les pone en retenedores fijos",
+                        "start_time": 74.84,
+                        "end_time": 76.76,
+                        "duration": 1.9200000000000017
+                    },
+                    "./Data/video2/clip_2-36.mp4": {
+                        "text": "y eso tambi\u00e9n afecta much\u00edsimo.",
+                        "start_time": 76.76,
+                        "end_time": 78.32,
+                        "duration": 1.559999999999988
+                    },
+                    "./Data/video2/clip_2-37.mp4": {
+                        "text": "Muchos de nuestros actores tienen brackets",
+                        "start_time": 78.32,
+                        "end_time": 80.36,
+                        "duration": 2.0400000000000063
+                    },
+                    "./Data/video2/clip_2-38.mp4": {
+                        "text": "y pueden trabajar perfecto con ellos porque se acostumbran",
+                        "start_time": 80.36,
+                        "end_time": 83.08,
+                        "duration": 2.719999999999999
+                    },
+                    "./Data/video2/clip_2-39.mp4": {
+                        "text": "hacen una excelente gesticulaci\u00f3n y funciona muy bien.",
+                        "start_time": 83.08,
+                        "end_time": 86.0,
+                        "duration": 2.9200000000000017
+                    },
+                    "./Data/video2/clip_2-40.mp4": {
+                        "text": "Pero hay otras cosas est\u00e9ticas que no afectan.",
+                        "start_time": 86.0,
+                        "end_time": 88.36,
+                        "duration": 2.3599999999999994
+                    },
+                    "./Data/video2/clip_2-41.mp4": {
+                        "text": "Entonces, bueno, hay que aprender tambi\u00e9n a jugar",
+                        "start_time": 88.36,
+                        "end_time": 90.96,
+                        "duration": 2.5999999999999943,
+                        "mouth_numpy": "./Data/processed/Mouth/clip_2-41_mouth.npz",
+                        "face_numpy": "./Data/processed/Face/clip_2-41_face.npz"
+                    },
+                    "./Data/video2/clip_2-42.mp4": {
+                        "text": "con qu\u00e9 utilizas dest\u00e9tica para tu beneficio.",
+                        "start_time": 90.96,
+                        "end_time": 94.12,
+                        "duration": 3.160000000000011
+                    }
+                }
+            }
+        }
+    ]
+}
