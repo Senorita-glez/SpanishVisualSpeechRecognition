@@ -7,12 +7,20 @@ from mediapipe.tasks.python import vision
 import cv2
 import multiprocessing
 import json
+import numpy as np
+import cv2
+import skvideo.io
+import os
+from mediapipe.tasks import python
+from mediapipe.tasks.python import vision
+import mediapipe as mp
 
 class VideoProcessor:
     def __init__(self, path):
         self.video_path = path
         self.mouth_frames = []
         self.face_frames = []
+        self.max_frames = 270  # 30 fps * 9 seconds
 
         base_options = python.BaseOptions(model_asset_path='face_landmarker_v2_with_blendshapes.task')
         self.detector = vision.FaceLandmarker.create_from_options(
@@ -68,24 +76,21 @@ class VideoProcessor:
         for face_landmarks in detection_result.face_landmarks:
             img_height, img_width = image.shape
 
-            # Get bounding box coordinates
             x_min = int(min(landmark.x * img_width for landmark in face_landmarks))
             x_max = int(max(landmark.x * img_width for landmark in face_landmarks))
             y_min = int(min(landmark.y * img_height for landmark in face_landmarks))
             y_max = int(max(landmark.y * img_height for landmark in face_landmarks))
 
-            # Ensure the region is valid
             if x_max <= x_min or y_max <= y_min:
                 return None
 
-            # Crop and resize face region
             face_region = image[y_min:y_max, x_min:x_max]
             resized_face = cv2.resize(face_region, final_size, interpolation=cv2.INTER_AREA)
 
             return resized_face  
 
     def extract_mouth(self, image, detection_result, target_size=(100, 50), margin_factor=0.2):
-        """Extrae la región de la boca con margen adicional, manteniendo una proporción 2:1."""
+        """Extracts the mouth region with additional margin while maintaining a 2:1 aspect ratio."""
         MOUTH_LANDMARKS = [0, 37, 267, 39, 40, 41, 185, 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291]
 
         for face_landmarks in detection_result.face_landmarks:
@@ -99,10 +104,7 @@ class VideoProcessor:
             x_min, x_max = min(x for x, _ in mouth_coords), max(x for x, _ in mouth_coords)
             y_min, y_max = min(y for _, y in mouth_coords), max(y for _, y in mouth_coords)
 
-            # Calcular ancho y alto originales
             mouth_width, mouth_height = x_max - x_min, y_max - y_min
-
-            # Aplicar margen
             margin_w = int(mouth_width * margin_factor)
             margin_h = int(mouth_height * margin_factor)
 
@@ -111,85 +113,69 @@ class VideoProcessor:
             y_min = max(y_min - margin_h, 0)
             y_max = min(y_max + margin_h, img_height)
 
-            # Recalcular tamaño con margen
             mouth_width, mouth_height = x_max - x_min, y_max - y_min
 
-            # Ajustar para mantener proporción 2:1 (ancho = 2 * alto)
             desired_width = max(mouth_width, 2 * mouth_height)
             desired_height = desired_width // 2  
 
             center_x, center_y = (x_max + x_min) // 2, (y_max + y_min) // 2
 
-            # Definir nuevas coordenadas asegurando que se mantengan dentro de la imagen
             x_min_new = max(center_x - desired_width // 2, 0)
             x_max_new = min(center_x + desired_width // 2, img_width)
             y_min_new = max(center_y - desired_height // 2, 0)
             y_max_new = min(center_y + desired_height // 2, img_height)
 
-            # Extraer y redimensionar la región de la boca
             mouth_region = image[y_min_new:y_max_new, x_min_new:x_max_new]
             resized_mouth = cv2.resize(mouth_region, target_size, interpolation=cv2.INTER_AREA)
 
             return resized_mouth
 
-    def save_video(self, frames, output_path, fps=30):
-        """Saves extracted frames as a grayscale video."""
-        if not frames:
-            print(f"No frames available to save for {output_path}.")
-            return
+    def pad_frames(self, frames, target_shape):
+        """Añade padding al final de los frames hasta completar 270 frames."""
+        num_frames = len(frames)
+        padded_frames = np.array(frames)  # Convertir lista a array
 
-        frame_height, frame_width = frames[0].shape  
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        if num_frames < self.max_frames:
+            # Crear padding de frames vacíos al final
+            pad_size = self.max_frames - num_frames
+            pad_frames = np.zeros((pad_size, *target_shape), dtype=np.uint8)
+            padded_frames = np.vstack((padded_frames, pad_frames))  # Añadir padding al final
 
-        video_writer = cv2.VideoWriter(output_path, fourcc, fps, (frame_width, frame_height), isColor=False)
-
-        for frame in frames:
-            video_writer.write(frame)
-
-        video_writer.release()
-        print(f"Saved video as {output_path}")
-
-    def save_mouth_video(self, output_path="output_mouths.mp4", fps=30):
-        """Saves the extracted mouth frames as a video."""
-        self.save_video(self.mouth_frames, output_path, fps)
-
-    def save_face_video(self, output_path="output_faces.mp4", fps=30):
-        """Saves the extracted face frames as a video."""
-        self.save_video(self.face_frames, output_path, fps)
+        return padded_frames  # Devuelve el array con la forma correcta
 
     def saveFaceFramesNumpy(self, output_file="face_frames.npz"):
-        """Saves the extracted face frames as a compressed NumPy file for neural network input."""
-        if not self.face_frames:
-            print("No face frames available to save.")
-            return
-        
-        np.savez_compressed(output_file, face_frames=np.array(self.face_frames))
-        print(f"Saved face frames as {output_file}")
+        """Guarda los frames de la cara con padding al final si es necesario."""
+        padded_faces = self.pad_frames(self.face_frames, (100, 100))
+        print(f"Saved face frames as {output_file}, Shape: {padded_faces.shape}")
+        np.savez_compressed(output_file, face_frames=padded_faces)
 
     def saveMouthFramesNumpy(self, output_file="mouth_frames.npz"):
-        """Saves the extracted mouth frames as a compressed NumPy file for neural network input."""
-        if not self.mouth_frames:
-            print("No mouth frames available to save.")
-            return
+        """Guarda los frames de la boca con padding al final si es necesario."""
+        padded_mouths = self.pad_frames(self.mouth_frames, (50, 100))
+        print(f"Saved mouth frames as {output_file}, Shape: {padded_mouths.shape}")
+        np.savez_compressed(output_file, mouth_frames=padded_mouths)
         
-        np.savez_compressed(output_file, mouth_frames=np.array(self.mouth_frames))
-        print(f"Saved mouth frames as {output_file}")
 
-def get_subclip_paths(file_path, start, end):
+def get_filtered_subclip_paths(file_path, start, end, min_duration=1, max_duration=9):
     with open(file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
-    subclip_paths = [
-        clip_path
-        for video in data["videos"]
-        for clip_path in video["video_metadata"]["subclips"].keys()
-    ]
-    return subclip_paths[start:end]
+
+    # Extraer subclips con sus duraciones
+    filtered_subclip_paths = []
+    for video in data["videos"]:
+        subclips = video["video_metadata"]["subclips"]
+        for clip_path, clip_data in subclips.items():
+            if min_duration <= clip_data["duration"] <= max_duration:
+                filtered_subclip_paths.append(clip_path)
+
+    # Retornar la porción solicitada de la lista
+    return filtered_subclip_paths[start:end]
 
 json_file = "./Data/videos_metadata.json"
-output_dirMouth = "./Data/processed/Mouth"
-output_dirFace = "./Data/processed/Face"
+output_dirMouth = "./DataProcessed/Mouth"
+output_dirFace = "./DataProcessed/Face"
 
-list_of_videos = get_subclip_paths(json_file, 0, 500)
+list_of_videos = get_filtered_subclip_paths(json_file, 0, 5)
 num_processes = min(multiprocessing.cpu_count(), len(list_of_videos))  
 
 # Usamos un Manager para manejar el Lock de manera segura
@@ -211,13 +197,18 @@ def process_video_parallel(video_path):
         mouth_npy = os.path.join(output_dirMouth, f"{video_name}_mouth.npz")
         face_npy = os.path.join(output_dirFace, f"{video_name}_face.npz")
 
-        # Guardar los datos en archivos separados
-        np.savez_compressed(mouth_npy, mouth_frames=np.array(processed_mouths))
-        np.savez_compressed(face_npy, face_frames=np.array(processed_faces))
+        # Guardar los frames de bocas y caras en archivos npz 
+        video_processor.saveFaceFramesNumpy(face_npy)
+        video_processor.saveMouthFramesNumpy(mouth_npy)
+
+        # Obtener el FPS del video
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        cap.release()  # Liberar el video después de obtener el FPS
 
         # Bloquear escritura para evitar corrupción de datos en JSON
         with lock:
-            print(f"[{video_path}] Mouth frames: {len(processed_mouths)}, Face frames: {len(processed_faces)}")
+            print(f"[{video_path}] Mouth frames: {len(processed_mouths)}, Face frames: {len(processed_faces)}, FPS: {fps}")
 
             # Leer el JSON existente
             if os.path.exists(json_file):
@@ -234,6 +225,7 @@ def process_video_parallel(video_path):
                 if video_path in subclips:
                     subclips[video_path]["mouth_numpy"] = mouth_npy
                     subclips[video_path]["face_numpy"] = face_npy
+                    subclips[video_path]["fps"] = fps  # Agregar el fps al subclip
                     updated = True
                     break  # Salimos del loop, ya que encontramos y actualizamos el clip
 
@@ -246,6 +238,7 @@ def process_video_parallel(video_path):
 
     else:
         print(f"[{video_path}] No faces or mouths detected.")
+
 
 if __name__ == "__main__":
     with multiprocessing.Pool(num_processes) as pool:
