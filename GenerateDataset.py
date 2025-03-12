@@ -370,8 +370,10 @@ def create_dataset():
     PLxep90LjGgt9fLG2ZoGbk7xVOKydpuj4C  # Playlist de videos de Persona4
     PLAAC7fSa2ntKUjtze8ufLhDj8l8MnXhOF  # Playlist de videos de Persona5
     PLxep90LjGgt8_k2OgTTpGFbmW-VAm4ysY  # Playlist de videos de Persona6
+    
+    PLxep90LjGgt8bqPpkMv4d81zLibPEq_lE  # Playlist de videos de Persona8
     '''
-    links = fromPlaylistToLinks("https://www.youtube.com/playlist?list=PLAAC7fSa2ntKUjtze8ufLhDj8l8MnXhOF")
+    links = fromPlaylistToLinks("https://www.youtube.com/playlist?list=PLxep90LjGgt8eSZivlAa-Xzq2e9r1QUPk")
     # Crear la carpeta si no existe
     os.makedirs(folder_path, exist_ok=True)
 
