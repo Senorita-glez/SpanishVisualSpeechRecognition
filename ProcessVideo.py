@@ -156,7 +156,7 @@ class VideoProcessor:
         np.savez_compressed(output_file, mouth_frames=padded_mouths)
         
 
-def get_filtered_subclip_paths(file_path, start, end, min_duration=1, max_duration=9):
+def get_filtered_subclip_paths(file_path, min_duration=1, max_duration=9):
     with open(file_path, "r", encoding="utf-8") as file:
         data = json.load(file)
 
@@ -169,13 +169,13 @@ def get_filtered_subclip_paths(file_path, start, end, min_duration=1, max_durati
                 filtered_subclip_paths.append(clip_path)
 
     # Retornar la porción solicitada de la lista
-    return filtered_subclip_paths[start:end]
+    return filtered_subclip_paths
 
 json_file = "./Data/videos_metadata.json"
 output_dirMouth = "./DataProcessed/Mouth"
 output_dirFace = "./DataProcessed/Face"
 
-list_of_videos = get_filtered_subclip_paths(json_file, 0, 5)
+list_of_videos = get_filtered_subclip_paths(json_file)
 num_processes = min(multiprocessing.cpu_count(), len(list_of_videos))  
 
 # Usamos un Manager para manejar el Lock de manera segura
