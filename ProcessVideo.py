@@ -40,10 +40,9 @@ class VideoProcessor:
         return os.path.basename(self.video_path)
     
     def temporal_resample(self, frames, target_frames=256):
-        """Interpola la secuencia de frames a una longitud fija (270)."""
+        """Interpola la secuencia de frames de 270 a 256"""
         num_frames = len(frames)
-        if num_frames == 0:
-            return np.zeros((target_frames, *frames[0].shape), dtype=np.float32)
+        assert num_frames == self.max_frames, f"Se esperaban {self.max_frames} frames, pero se obtuvieron {num_frames}"
 
         indices = np.linspace(0, num_frames - 1, target_frames).astype(np.float32)
         resampled_frames = []
@@ -92,8 +91,8 @@ class VideoProcessor:
         self.mouth_frames = self.normalize_frames(self.mouth_frames)
         self.face_frames = self.normalize_frames(self.face_frames)
 
-        self.mouth_frames = self.temporal_resample(self.mouth_frames, self.max_frames)
-        self.face_frames = self.temporal_resample(self.face_frames, self.max_frames)
+        self.mouth_frames = self.temporal_resample(self.mouth_frames, target_frames=256)
+        self.face_frames = self.temporal_resample(self.face_frames, target_frames=256)
 
         return self.mouth_frames, self.face_frames
 
