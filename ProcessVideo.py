@@ -35,35 +35,74 @@ class VideoProcessor:
     def getFileName(self):
         """Returns the filename of the video."""
         return os.path.basename(self.video_path)
+    
+    def temporal_resample(self, frames, target_frames=256):
+        """Interpola la secuencia de frames a una longitud fija (270)."""
+        num_frames = len(frames)
+        if num_frames == 0:
+            return np.zeros((target_frames, *frames[0].shape), dtype=np.float32)
+
+        indices = np.linspace(0, num_frames - 1, target_frames).astype(np.float32)
+        resampled_frames = []
+
+        for i in indices:
+            lower = int(np.floor(i))
+            upper = min(lower + 1, num_frames - 1)
+            alpha = i - lower
+            frame = (1 - alpha) * frames[lower] + alpha * frames[upper]
+            resampled_frames.append(frame)
+
+        return np.array(resampled_frames)
+    
+    def temporal_resample(self, frames, target_frames=2):
+        """Interpola la secuencia de frames a una longitud fija (270)."""
+        num_frames = len(frames)
+        if num_frames == 0:
+            return np.zeros((target_frames, *frames[0].shape), dtype=np.float32)
+
+        indices = np.linspace(0, num_frames - 1, target_frames).astype(np.float32)
+        resampled_frames = []
+
+        for i in indices:
+            lower = int(np.floor(i))
+            upper = min(lower + 1, num_frames - 1)
+            alpha = i - lower
+            frame = (1 - alpha) * frames[lower] + alpha * frames[upper]
+            resampled_frames.append(frame)
+
+        return np.array(resampled_frames)
+
+
 
     def process_video(self):
-        """Extracts mouth and face regions from video frames after converting to grayscale."""
         self.mouth_frames = []
         self.face_frames = []
-        
+
         videogen = skvideo.io.vreader(self.video_path)
 
         for frame in videogen:
-            # Convert frame to grayscale first
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-
-            # Detect face landmarks
             detection_result = self.detect_face(frame)
             if detection_result is None:
                 print('No face detected')
                 return [], []
 
-            # Extract mouth and face regions
             mouth_crop = self.extract_mouth(gray_frame, detection_result)
             face_crop = self.extract_face(gray_frame, detection_result)
 
-            # Store extracted regions
             if face_crop is not None:
                 self.face_frames.append(face_crop)
             if mouth_crop is not None:
                 self.mouth_frames.append(mouth_crop)
 
-        return self.mouth_frames, self.face_frames  
+        # <<< Normalización + Resampleo >>>
+        self.mouth_frames = self.normalize_frames(self.mouth_frames)
+        self.face_frames = self.normalize_frames(self.face_frames)
+
+        self.mouth_frames = self.temporal_resample(self.mouth_frames, self.max_frames)
+        self.face_frames = self.temporal_resample(self.face_frames, self.max_frames)
+
+        return self.mouth_frames, self.face_frames
 
     def detect_face(self, frame):
         """Detects face landmarks in a grayscale frame using MediaPipe."""
