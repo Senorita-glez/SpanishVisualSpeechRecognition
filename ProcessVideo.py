@@ -15,6 +15,9 @@ from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 import mediapipe as mp
 
+np.int = int 
+np.float = float
+
 class VideoProcessor:
     def __init__(self, path):
         self.video_path = path
@@ -54,25 +57,15 @@ class VideoProcessor:
 
         return np.array(resampled_frames)
     
-    def temporal_resample(self, frames, target_frames=2):
-        """Interpola la secuencia de frames a una longitud fija (270)."""
-        num_frames = len(frames)
-        if num_frames == 0:
-            return np.zeros((target_frames, *frames[0].shape), dtype=np.float32)
-
-        indices = np.linspace(0, num_frames - 1, target_frames).astype(np.float32)
-        resampled_frames = []
-
-        for i in indices:
-            lower = int(np.floor(i))
-            upper = min(lower + 1, num_frames - 1)
-            alpha = i - lower
-            frame = (1 - alpha) * frames[lower] + alpha * frames[upper]
-            resampled_frames.append(frame)
-
-        return np.array(resampled_frames)
-
-
+    def normalize_frames(self, frames):
+        """Normaliza cada frame para que tenga media 0 y varianza 1 (por frame)."""
+        norm_frames = []
+        for frame in frames:
+            mean = np.mean(frame)
+            std = np.std(frame) if np.std(frame) > 0 else 1.0
+            norm_frame = (frame - mean) / std
+            norm_frames.append(norm_frame)
+        return norm_frames
 
     def process_video(self):
         self.mouth_frames = []
