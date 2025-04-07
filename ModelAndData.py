@@ -23,47 +23,66 @@ class LipToMelDataset(Dataset):
             mel_path = os.path.join(mel_folder, audio_file)
 
             if not os.path.exists(mel_path):
+                print(f"[SKIP] Falta mel: {mel_path}")
                 continue
 
-            frames_npz = np.load(mouth_path)
-            mel_npz = np.load(mel_path)
+            try:
+                print(f"Leyendo {mouth_path} y {mel_path}")
+                frames_npz = np.load(mouth_path)
+                mel_npz = np.load(mel_path)
 
-            frames_len = frames_npz['mouth_frames'].shape[0]
-            mel_len_actual = mel_npz['mel_spec'].shape[1]
-            min_len = min(frames_len, mel_len_actual)
+                frames_len = frames_npz['mouth_frames'].shape[0]
+                mel_len_actual = mel_npz['mel_spec'].shape[1]
+                min_len = min(frames_len, mel_len_actual)
 
-            num_samples = min_len - max(frame_len, mel_len) + 1
+                num_samples = min_len - max(frame_len, mel_len) + 1
 
-            for i in range(0, num_samples, stride):
-                self.samples.append({
-                    'mouth_path': mouth_path,
-                    'mel_path': mel_path,
-                    'start_idx': i
-                })
+                if num_samples <= 0:
+                    print(f"SKIP Archivo demasiado corto: {clip_file}")
+                    continue
+
+                for i in range(0, num_samples, stride):
+                    self.samples.append({
+                        'mouth_path': mouth_path,
+                        'mel_path': mel_path,
+                        'start_idx': i
+                    })
+
+                print(f"Agregado {clip_file} con {num_samples} muestras")
+
+            except Exception as e:
+                print(f"ERROR Archivo problemático: {clip_file} -- {str(e)}")
+                continue
 
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
         sample = self.samples[idx]
-        npz_frames = np.load(sample['mouth_path'])
-        npz_mel = np.load(sample['mel_path'])
+        try:
+            npz_frames = np.load(sample['mouth_path'])
+            npz_mel = np.load(sample['mel_path'])
 
-        frames = npz_frames['mouth_frames'] 
-        mel = npz_mel['mel_spec']
+            frames = npz_frames['mouth_frames']
+            mel = npz_mel['mel_spec']
 
-        i = sample['start_idx']
+            i = sample['start_idx']
 
-        f = frames[i:i+self.frame_len]
-        m = mel[:, i:i+self.mel_len]
+            f = frames[i:i+self.frame_len]
+            m = mel[:, i:i+self.mel_len]
 
-        m = (m - m.mean()) / (m.std() + 1e-8)
+            mean = m.mean()
+            std = m.std() + 1e-8
+            m_norm = (m - mean) / std
 
-        f = torch.tensor(f, dtype=torch.float32).unsqueeze(0)
-        m = torch.tensor(m, dtype=torch.float32).unsqueeze(0)
+            f = torch.tensor(f, dtype=torch.float32).unsqueeze(0)
+            m_norm = torch.tensor(m_norm, dtype=torch.float32).unsqueeze(0)
 
-        return f, m
+            return f, m_norm, mean, std
 
+        except Exception as e:
+            print(f"ERROR al cargar muestra idx={idx}: {e}")
+            raise e 
 
 # ---------------------------
 # Model
@@ -93,6 +112,7 @@ class LipToMel_Transformer(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Flatten(),
+		#dense , capa fina 480 = 80x6
             nn.Linear(cnn_output_dim, 128),
             nn.ReLU()
         )
@@ -127,45 +147,62 @@ class LipToMel_Transformer(nn.Module):
 # Entrenamiento
 # ---------------------------
 
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+if __name__ == "__main__":
 
-dataset = LipToMelDataset(
-    mouth_folder="DataProcessed/Mouth",
-    mel_folder="DataProcessed/Mel",
-    frame_len=5,
-    mel_len=6,
-    stride=1
-)
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
+    dataset = LipToMelDataset(
+        mouth_folder="DataProcessed/Mouth",
+        mel_folder="DataProcessed/Mel",
+        frame_len=5,
+        mel_len=6,
+        stride=1
+    )
 
-model = LipToMel_Transformer(frame_size=(50, 100)).to(device)
+    import os 
+    num_workers = os.cpu_count()-1
+    print(f"num_workers: {num_workers}")
 
-# Cambiamos a L1Loss que suele ser más estable para mel
-criterion = nn.L1Loss()
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
+    dataloader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers = num_workers)
 
-best_loss = float('inf')
+    print("datos cargados")
 
-for epoch in range(50):
-    model.train()
-    total_loss = 0.0
+    model = LipToMel_Transformer(frame_size=(50, 100)).to(device)
 
-    for frames, mels in dataloader:
-        frames, mels = frames.to(device), mels.to(device)
+    criterion = nn.L1Loss() #regresion - error absoluto medio 
+    optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
-        optimizer.zero_grad()
-        outputs = model(frames)
-        loss = criterion(outputs, mels)
-        loss.backward()
-        optimizer.step()
-        total_loss += loss.item()
+    print("inicando entrenamiento")
 
-    avg_loss = total_loss / len(dataloader)
-    print(f"Epoch [{epoch+1}/50] - Loss: {avg_loss:.6f}")
+    import sys
+    import datetime
 
-    # Guardar el mejor modelo
-    if avg_loss < best_loss:
-        best_loss = avg_loss
-        torch.save(model.state_dict(), "lip_to_mel_best.pt")
-        print(f"Nuevo mejor modelo guardado (loss: {best_loss:.4f})")
+    print("="*50)
+    print(f"🕐 Fecha y hora de inicio: {datetime.datetime.now()}")
+    print(f"🖥️  Python ejecutado desde: {sys.executable}")
+    print(f"💾 CUDA disponible: {torch.cuda.is_available()}")
+    print(f"💻 Dispositivo en uso: {'cuda' if torch.cuda.is_available() else 'cpu'}")
+    print("="*50)
+
+    best_loss = float('inf')
+
+    for epoch in range(50):
+        model.train()
+        total_loss = 0.0
+
+        for frames, mels_norm, _, _ in dataloader:  # Ignora mean y std
+            frames, mels_norm = frames.to(device), mels_norm.to(device)
+            optimizer.zero_grad()
+            outputs = model(frames)
+            loss = criterion(outputs, mels_norm)
+            loss.backward()
+            optimizer.step()
+
+
+        avg_loss = total_loss / len(dataloader)
+        print(f"Epoch [{epoch+1}/50] - Loss: {avg_loss:.6f}")
+
+        if avg_loss < best_loss:
+            best_loss = avg_loss
+            torch.save(model.state_dict(), "lip_to_mel_best.pt")
+            print(f"Nuevo mejor modelo guardado (loss: {best_loss:.4f})")

@@ -23,9 +23,10 @@ class VideoProcessor:
         self.video_path = path
         self.mouth_frames = []
         self.face_frames = []
-        self.max_frames = 270  # 30 fps * 9 seconds
+        self.max_frames = 270  # esto ya solo es informativo
+        self.min_detected_frames = 10  # mínimo para considerar válido
 
-        base_options = python.BaseOptions(model_asset_path='face_landmarker_v2_with_blendshapes.task')
+        base_options = python.BaseOptions(model_asset_path='models/face_landmarker_v2_with_blendshapes.task')
         self.detector = vision.FaceLandmarker.create_from_options(
             vision.FaceLandmarkerOptions(
                 base_options=base_options,
@@ -40,10 +41,8 @@ class VideoProcessor:
         return os.path.basename(self.video_path)
     
     def temporal_resample(self, frames, target_frames=256):
-        """Interpola la secuencia de frames de 270 a 256"""
+        """Interpola la secuencia de frames a target_frames"""
         num_frames = len(frames)
-        assert num_frames == self.max_frames, f"Se esperaban {self.max_frames} frames, pero se obtuvieron {num_frames}"
-
         indices = np.linspace(0, num_frames - 1, target_frames).astype(np.float32)
         resampled_frames = []
 
@@ -55,16 +54,16 @@ class VideoProcessor:
             resampled_frames.append(frame)
 
         return np.array(resampled_frames)
-    
+
     def normalize_frames(self, frames):
-        """Normaliza cada frame para que tenga media 0 y varianza 1 (por frame)."""
+        """Normaliza cada frame (z-score)."""
         norm_frames = []
         for frame in frames:
             mean = np.mean(frame)
             std = np.std(frame) if np.std(frame) > 0 else 1.0
             norm_frame = (frame - mean) / std
             norm_frames.append(norm_frame)
-        return norm_frames
+        return np.array(norm_frames)
 
     def process_video(self):
         self.mouth_frames = []
@@ -76,8 +75,7 @@ class VideoProcessor:
             gray_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
             detection_result = self.detect_face(frame)
             if detection_result is None:
-                print('No face detected')
-                return [], []
+                continue
 
             mouth_crop = self.extract_mouth(gray_frame, detection_result)
             face_crop = self.extract_face(gray_frame, detection_result)
@@ -87,10 +85,15 @@ class VideoProcessor:
             if mouth_crop is not None:
                 self.mouth_frames.append(mouth_crop)
 
-        # <<< Normalización + Resampleo >>>
+        if len(self.mouth_frames) < self.min_detected_frames or len(self.face_frames) < self.min_detected_frames:
+            print(f"[{self.video_path}] Descartado por pocos frames detectados (mouth: {len(self.mouth_frames)}, face: {len(self.face_frames)})")
+            return np.array([]), np.array([])
+
+        # Normalización
         self.mouth_frames = self.normalize_frames(self.mouth_frames)
         self.face_frames = self.normalize_frames(self.face_frames)
 
+        # Interpolación directa a 256
         self.mouth_frames = self.temporal_resample(self.mouth_frames, target_frames=256)
         self.face_frames = self.temporal_resample(self.face_frames, target_frames=256)
 
@@ -176,15 +179,12 @@ class VideoProcessor:
 
     def saveFaceFramesNumpy(self, output_file="face_frames.npz"):
         """Guarda los frames de la cara con padding al final si es necesario."""
-        padded_faces = self.pad_frames(self.face_frames, (100, 100))
-        print(f"Saved face frames as {output_file}, Shape: {padded_faces.shape}")
-        np.savez_compressed(output_file, face_frames=padded_faces)
+        print(f"Saved face frames as {output_file}, Shape: {self.face_frames.shape}")
+        np.savez_compressed(output_file, face_frames=self.face_frames)
 
     def saveMouthFramesNumpy(self, output_file="mouth_frames.npz"):
         """Guarda los frames de la boca con padding al final si es necesario."""
-        padded_mouths = self.pad_frames(self.mouth_frames, (50, 100))
-        print(f"Saved mouth frames as {output_file}, Shape: {padded_mouths.shape}")
-        np.savez_compressed(output_file, mouth_frames=padded_mouths)
+        np.savez_compressed(output_file, mouth_frames=self.mouth_frames)
         
 
 def get_filtered_subclip_paths(file_path, min_duration=1, max_duration=9):
@@ -218,7 +218,7 @@ def process_video_parallel(video_path):
     video_processor = VideoProcessor(video_path)
     processed_mouths, processed_faces = video_processor.process_video()
 
-    if processed_mouths and processed_faces:
+    if len(processed_mouths) > 0 and len(processed_faces) > 0:
         # Crear carpeta de salida por video
         video_name = os.path.splitext(os.path.basename(video_path))[0]
         os.makedirs(output_dirMouth, exist_ok=True)
