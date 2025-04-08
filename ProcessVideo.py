@@ -23,11 +23,11 @@ class VideoProcessor:
         self.video_path = path
         self.mouth_frames = []
         self.face_frames = []
-        self.max_frames = 270  # esto ya solo es informativo
         self.min_detected_frames = 10  # mínimo para considerar válido
 
         base_options = python.BaseOptions(model_asset_path='models/face_landmarker_v2_with_blendshapes.task')
         self.detector = vision.FaceLandmarker.create_from_options(
+
             vision.FaceLandmarkerOptions(
                 base_options=base_options,
                 output_face_blendshapes=False,  
@@ -163,19 +163,6 @@ class VideoProcessor:
             resized_mouth = cv2.resize(mouth_region, target_size, interpolation=cv2.INTER_AREA)
 
             return resized_mouth
-
-    def pad_frames(self, frames, target_shape):
-        """Añade padding al final de los frames hasta completar 270 frames."""
-        num_frames = len(frames)
-        padded_frames = np.array(frames)  # Convertir lista a array
-
-        if num_frames < self.max_frames:
-            # Crear padding de frames vacíos al final
-            pad_size = self.max_frames - num_frames
-            pad_frames = np.zeros((pad_size, *target_shape), dtype=np.uint8)
-            padded_frames = np.vstack((padded_frames, pad_frames))  # Añadir padding al final
-
-        return padded_frames  # Devuelve el array con la forma correcta
 
     def saveFaceFramesNumpy(self, output_file="face_frames.npz"):
         """Guarda los frames de la cara con padding al final si es necesario."""
