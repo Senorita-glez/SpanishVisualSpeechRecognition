@@ -14,6 +14,8 @@ class LipToMelDataset(Dataset):
         self.samples = []  
         self.frame_len = frame_len
         self.mel_len = mel_len
+        self.mel_folder = mel_folder
+        self.global_std, self.global_mean = self.compute_global_mean_std()
 
         mouth_files = [f for f in os.listdir(mouth_folder) if f.endswith(".npz")]
 
@@ -54,35 +56,46 @@ class LipToMelDataset(Dataset):
                 print(f"ERROR Archivo problemático: {clip_file} -- {str(e)}")
                 continue
 
+    def compute_global_mean_std(self):
+        mel_values = []
+
+        for file in os.listdir(self.mel_folder):
+            if file.endswith('.npz'):
+                mel_path = os.path.join(self.mel_folder, file)
+                try:
+                    mel = np.load(mel_path)['mel_spec']
+                    mel_values.append(mel)
+                except:
+                    continue
+
+        all_mels = np.concatenate(mel_values, axis=1)  # concat over time
+        mean = np.mean(all_mels)
+        std = np.std(all_mels)
+
+        return std, mean
+
     def __len__(self):
         return len(self.samples)
 
     def __getitem__(self, idx):
         sample = self.samples[idx]
-        try:
-            npz_frames = np.load(sample['mouth_path'])
-            npz_mel = np.load(sample['mel_path'])
 
-            frames = npz_frames['mouth_frames']
-            mel = npz_mel['mel_spec']
+        npz_frames = np.load(sample['mouth_path'])
+        npz_mel = np.load(sample['mel_path'])
 
-            i = sample['start_idx']
+        frames = npz_frames['mouth_frames']
+        mel = npz_mel['mel_spec']
 
-            f = frames[i:i+self.frame_len]
-            m = mel[:, i:i+self.mel_len]
+        i = sample['start_idx']
+        f = frames[i:i+self.frame_len]
+        m = mel[:, i:i+self.mel_len]
 
-            mean = m.mean()
-            std = m.std() + 1e-8
-            m_norm = (m - mean) / std
+        m_norm = (m - self.global_mean) / (self.global_std + 1e-8)
 
-            f = torch.tensor(f, dtype=torch.float32).unsqueeze(0)
-            m_norm = torch.tensor(m_norm, dtype=torch.float32).unsqueeze(0)
+        f = torch.tensor(f, dtype=torch.float32).unsqueeze(0)     # [1, 5, 50, 100]
+        m_norm = torch.tensor(m_norm, dtype=torch.float32).unsqueeze(0)  # [1, 80, 6]
 
-            return f, m_norm, mean, std
-
-        except Exception as e:
-            print(f"ERROR al cargar muestra idx={idx}: {e}")
-            raise e 
+        return f, m_norm
 
 # ---------------------------
 # Model
@@ -124,19 +137,6 @@ class LipToMel_Transformer(nn.Module):
         )
 
         #recontruir a dimension 80x6 para el espectrograma
-
-        '''encoder_layer = nn.TransformerEncoderLayer(
-            d_model=128, nhead=4, dim_feedforward=256, dropout=0.1, batch_first=True
-        )
-        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=2)
-
-        self.decoder = nn.Sequential(
-            nn.Linear(128 * 5, 512),
-            nn.ReLU(),
-            nn.Linear(512, 480),
-            nn.ReLU(),
-            nn.Unflatten(1, (1, 80, 6))
-        )'''
 
     def forward(self, x):
         B, C, T, H, W = x.size()
