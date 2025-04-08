@@ -94,15 +94,23 @@ class LipToMel_Transformer(nn.Module):
         self.frame_size = frame_size
 
         self.cnn = nn.Sequential(
+            #entra 50x100
             nn.Conv2d(1, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.MaxPool2d(2),
-
+            
+            #entra 25x50
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.MaxPool2d(2),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
         )
 
         H, W = frame_size
@@ -112,12 +120,12 @@ class LipToMel_Transformer(nn.Module):
 
         self.fc = nn.Sequential(
             nn.Flatten(),
-		#dense , capa fina 480 = 80x6
-            nn.Linear(cnn_output_dim, 128),
-            nn.ReLU()
+            nn.Linear(cnn_output_dim, 240), #same as dense in pytorch
         )
 
-        encoder_layer = nn.TransformerEncoderLayer(
+        #recontruir a dimension 80x6 para el espectrograma
+
+        '''encoder_layer = nn.TransformerEncoderLayer(
             d_model=128, nhead=4, dim_feedforward=256, dropout=0.1, batch_first=True
         )
         self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=2)
@@ -128,7 +136,7 @@ class LipToMel_Transformer(nn.Module):
             nn.Linear(512, 480),
             nn.ReLU(),
             nn.Unflatten(1, (1, 80, 6))
-        )
+        )'''
 
     def forward(self, x):
         B, C, T, H, W = x.size()
@@ -169,7 +177,7 @@ if __name__ == "__main__":
 
     model = LipToMel_Transformer(frame_size=(50, 100)).to(device)
 
-    criterion = nn.L1Loss() #regresion - error absoluto medio 
+    criterion = nn.L1Loss() #in torch L1Loss is the mean absolute error
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
 
     print("inicando entrenamiento")
