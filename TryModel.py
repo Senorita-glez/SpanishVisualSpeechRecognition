@@ -1,33 +1,50 @@
-from ModelAndData import LipToMel_Transformer, LipToMelDataset
-from torch.utils.data import DataLoader
-import torch
-import matplotlib.pyplot as plt
 import os
 import numpy as np
+import torch
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
+from ModelAndData import LipToMel_Transformer, LipToMelDataset
+import csv
 
 # ----------------------------
 # Configuración
 # ----------------------------
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-# Dataset
-dataset = LipToMelDataset(
+test_clip_files = np.load("splits/test_clip_files.npy")
+
+# Dataset completo por clip
+full_dataset = LipToMelDataset(
     mouth_folder="DataProcessed/Mouth",
     mel_folder="DataProcessed/Mel",
     frame_len=5,
     mel_len=6,
-    stride=1
+    stride=1,
+    per_clip=True,
+    selected_files=test_clip_files
 )
 
-dataloader = DataLoader(dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count() - 1)
+test_dataloader = DataLoader(full_dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count() - 1)
 
-# ----------------------------
-# Modelo
-# ----------------------------
 model = LipToMel_Transformer(frame_size=(50, 100))
-model.load_state_dict(torch.load("modelbest1.pt", map_location=device))
+model.load_state_dict(torch.load("lip_to_mel_best.pt", map_location=device))
 model = model.to(device)
 model.eval()
+
+# ----------------------------
+# Cargar valores globales de normalización
+# ----------------------------
+stats_path = "DataProcessed/global_stats.txt"
+assert os.path.exists(stats_path), "No se encontró el archivo de estadísticas globales."
+
+with open(stats_path, "r") as f:
+    lines = f.readlines()
+    if len(lines) < 2:
+        raise ValueError("Archivo global_stats.txt incompleto.")
+    global_std = float(lines[0].strip())
+    global_mean = float(lines[1].strip())
+
+print(f"📊 Global mean: {global_mean:.4f}, std: {global_std:.4f}")
 
 # ----------------------------
 # Reconstrucción completa
@@ -73,13 +90,17 @@ best_clip, worst_clip = -1, -1
 best_mel = None
 os.makedirs("outputs", exist_ok=True)
 
-for idx, (frames, mels_norm, clip_mean, clip_std) in enumerate(dataloader):
+csv_path = os.path.join("outputs", "clip_metrics.csv")
+with open(csv_path, "w", newline="") as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(["Clip", "L1 Loss", "L2 Loss", "SNR (dB)"])
+
+for idx, (frames, mels_norm) in enumerate(test_dataloader):
     frames, mels_norm = frames.to(device), mels_norm.to(device)
-    clip_mean, clip_std = clip_mean.to(device), clip_std.to(device)
 
     mel_pred_norm = reconstruct_full_mel_clip(frames, model)
-    mel_pred = mel_pred_norm * clip_std + clip_mean
-    mel_gt = mels_norm * clip_std + clip_mean
+    mel_pred = mel_pred_norm * global_std + global_mean
+    mel_gt = mels_norm * global_std + global_mean
 
     T_pred = mel_pred.shape[-1]
     mel_gt = mel_gt[..., :T_pred]
@@ -104,28 +125,37 @@ for idx, (frames, mels_norm, clip_mean, clip_std) in enumerate(dataloader):
         worst_snr = clip_snr
         worst_clip = idx
 
-    plt.imshow(mel_pred[0,0].cpu().numpy(), aspect='auto', origin='lower')
-    plt.title(f"Predicted Mel Clip {idx}")
-    plt.colorbar()
-    plt.savefig(f'outputs/predicted_mel_clip_{idx}.png')
-    plt.close()
+    with open(csv_path, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([idx, f"{clip_l1:.6f}", f"{clip_l2:.6f}", f"{clip_snr:.2f}"])
 
 # ----------------------------
 # Métricas globales
 # ----------------------------
+avg_l1 = total_l1 / n
+avg_l2 = total_l2 / n
+avg_snr = total_snr / n
+
 print("\nMétricas globales (dataset completo):")
-print(f"Avg L1 Loss: {total_l1/n:.6f}")
-print(f"Avg L2 Loss: {total_l2/n:.6f}")
-print(f"Avg SNR (dB): {total_snr/n:.2f} dB")
+print(f"Avg L1 Loss: {avg_l1:.6f}")
+print(f"Avg L2 Loss: {avg_l2:.6f}")
+print(f"Avg SNR (dB): {avg_snr:.2f} dB")
 
 print(f"\nMejor clip: {best_clip} con SNR = {best_snr:.2f} dB")
 print(f"Peor clip: {worst_clip} con SNR = {worst_snr:.2f} dB")
 
+with open(csv_path, "a", newline="") as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow([])
+    writer.writerow(["Promedios", f"{avg_l1:.6f}", f"{avg_l2:.6f}", f"{avg_snr:.2f}"])
+
 # ----------------------------
 # Guardar imagen del mejor mel
+# ----------------------------
 plt.imshow(best_mel, aspect='auto', origin='lower')
 plt.title("Best Clip Predicted Mel")
 plt.colorbar()
 plt.savefig("outputs/best_clip_mel.png")
 plt.close()
 print("Imagen del mejor mel guardada en outputs/best_clip_mel.png")
+print("Métricas guardadas en outputs/clip_metrics.csv")

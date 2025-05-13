@@ -1,20 +1,28 @@
 import os
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader, random_split
+from torch.utils.data import Dataset
 import torch.nn as nn
 import torch.optim as optim
+import datetime
+import sys
+import datetime
 
 # ---------------------------
 # Dataset con normalización incluida
 # ---------------------------
 
 class LipToMelDataset(Dataset):
-    def __init__(self, mouth_folder, mel_folder, frame_len=5, mel_len=6, stride=1):
+    def __init__(self, mouth_folder, mel_folder, frame_len=5, mel_len=6, stride=1, per_clip=False, selected_files=None):
         self.samples = []  
         self.frame_len = frame_len
         self.mel_len = mel_len
+        self.stride = stride
         self.mel_folder = mel_folder
+        self.per_clip = per_clip
+        mouth_files = selected_files if selected_files is not None else [f for f in os.listdir(mouth_folder) if f.endswith(".npz")]
         self.global_std, self.global_mean = self.compute_global_mean_std()
 
         mouth_files = [f for f in os.listdir(mouth_folder) if f.endswith(".npz")]
@@ -29,7 +37,6 @@ class LipToMelDataset(Dataset):
                 continue
 
             try:
-                print(f"Leyendo {mouth_path} y {mel_path}")
                 frames_npz = np.load(mouth_path)
                 mel_npz = np.load(mel_path)
 
@@ -37,28 +44,43 @@ class LipToMelDataset(Dataset):
                 mel_len_actual = mel_npz['mel_spec'].shape[1]
                 min_len = min(frames_len, mel_len_actual)
 
-                num_samples = min_len - max(frame_len, mel_len) + 1
-
-                if num_samples <= 0:
-                    print(f"SKIP Archivo demasiado corto: {clip_file}")
-                    continue
-
-                for i in range(0, num_samples, stride):
+                if self.per_clip:
                     self.samples.append({
                         'mouth_path': mouth_path,
                         'mel_path': mel_path,
-                        'start_idx': i
+                        'full_clip': True
                     })
+                else:
+                    num_samples = min_len - max(frame_len, mel_len) + 1
+                    if num_samples <= 0:
+                        print(f"SKIP Archivo demasiado corto: {clip_file}")
+                        continue
 
-                print(f"Agregado {clip_file} con {num_samples} muestras")
+                    for i in range(0, num_samples, stride):
+                        self.samples.append({
+                            'mouth_path': mouth_path,
+                            'mel_path': mel_path,
+                            'start_idx': i
+                        })
 
             except Exception as e:
                 print(f"ERROR Archivo problemático: {clip_file} -- {str(e)}")
                 continue
 
     def compute_global_mean_std(self):
+        stats_path = os.path.join("DataProcessed", "global_stats.txt")
+        
+        if os.path.exists(stats_path):
+            with open(stats_path, "r") as f:
+                lines = f.readlines()
+                if len(lines) >= 2:
+                    std, mean = [float(line.strip()) for line in lines[:2]]
+                    return std, mean
+                else:
+                    print("Archivo global_stats.txt está incompleto. Recalculando...")
+        
+        # Si no existe o está incompleto, calcular y guardar
         mel_values = []
-
         for file in os.listdir(self.mel_folder):
             if file.endswith('.npz'):
                 mel_path = os.path.join(self.mel_folder, file)
@@ -68,9 +90,16 @@ class LipToMelDataset(Dataset):
                 except:
                     continue
 
-        all_mels = np.concatenate(mel_values, axis=1)  # concat over time
+        if not mel_values:
+            raise ValueError("No se encontraron espectrogramas válidos para calcular mean y std.")
+
+        all_mels = np.concatenate(mel_values, axis=1)
         mean = np.mean(all_mels)
         std = np.std(all_mels)
+
+        os.makedirs("DataProcessed", exist_ok=True)
+        with open(stats_path, "w") as f:
+            f.write(f"{std}\n{mean}\n")
 
         return std, mean
 
@@ -79,23 +108,31 @@ class LipToMelDataset(Dataset):
 
     def __getitem__(self, idx):
         sample = self.samples[idx]
-
         npz_frames = np.load(sample['mouth_path'])
         npz_mel = np.load(sample['mel_path'])
 
         frames = npz_frames['mouth_frames']
         mel = npz_mel['mel_spec']
 
-        i = sample['start_idx']
-        f = frames[i:i+self.frame_len]
-        m = mel[:, i:i+self.mel_len]
+        if sample.get('full_clip', False):
+            frames = frames[:mel.shape[1]]  # asegúrate de que tengan mismo largo
+            mel_norm = (mel - self.global_mean) / (self.global_std + 1e-8)
 
-        m_norm = (m - self.global_mean) / (self.global_std + 1e-8)
+            frames = torch.tensor(frames, dtype=torch.float32).unsqueeze(0)  # [1, T, H, W]
+            mel_norm = torch.tensor(mel_norm, dtype=torch.float32).unsqueeze(0)  # [1, 80, T]
+            return frames, mel_norm
+        
+        else:
+            i = sample['start_idx']
+            f = frames[i:i+self.frame_len]
+            m = mel[:, i:i+self.mel_len]
 
-        f = torch.tensor(f, dtype=torch.float32).unsqueeze(0)     # [1, 5, 50, 100]
-        m_norm = torch.tensor(m_norm, dtype=torch.float32).unsqueeze(0)  # [1, 80, 6]
+            m_norm = (m - self.global_mean) / (self.global_std + 1e-8)
 
-        return f, m_norm
+            f = torch.tensor(f, dtype=torch.float32).unsqueeze(0)     # [1, 5, H, W]
+            m_norm = torch.tensor(m_norm, dtype=torch.float32).unsqueeze(0)  # [1, 80, 6]
+
+            return f, m_norm
 
 # ---------------------------
 # Model
@@ -132,85 +169,135 @@ class LipToMel_Transformer(nn.Module):
         cnn_output_dim = 64 * self.H_out * self.W_out
 
         self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(cnn_output_dim, 240), #same as dense in pytorch
-        )
-
-        #recontruir a dimension 80x6 para el espectrograma
+        nn.Flatten(),
+        nn.Linear(cnn_output_dim, 240),
+        nn.ReLU(),
+        nn.Linear(240, 80 * 6),
+        nn.Unflatten(1, (1, 80, 6))
+    )
 
     def forward(self, x):
-        B, C, T, H, W = x.size()
-        assert H == self.frame_size[0] and W == self.frame_size[1]
-        x = x.view(B * T, C, H, W)
+        B, C, T, H, W = x.shape
+        x = x.view(B * T, C, H, W)           # procesa cada frame por separado
         features = self.cnn(x)
-        features = self.fc(features)
-        features = features.view(B, T, -1)
-        encoded = self.transformer_encoder(features)
-        encoded = encoded.view(B, -1)
-        mel = self.decoder(encoded)
-        return mel
+        mel = self.fc(features)              # [B*T, 1, 80, 6]
+        mel = mel.view(B, T, 1, 80, 6)       # reacomoda por batch
+        mel = mel.mean(dim=1)               # promedio sobre los T frames
+        return mel                          # salida: [B, 1, 80, 6]
 
 
 # ---------------------------
 # Entrenamiento
 # ---------------------------
-
 if __name__ == "__main__":
+    CONTINUAR_ENTRENAMIENTO = False
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    dataset = LipToMelDataset(
+    all_clips = sorted([f for f in os.listdir("DataProcessed/Mouth") if f.endswith(".npz")])
+    torch.manual_seed(42)
+    clip_train_size = int(0.8 * len(all_clips))
+    train_clip_files, test_clip_files = all_clips[:clip_train_size], all_clips[clip_train_size:]
+    print(f"Total de clips: {len(all_clips)}")
+    print(f"Clips de entrenamiento: {len(train_clip_files)}")
+    print(f"Clips de prueba: {len(test_clip_files)}")
+
+     # Guardar índices para reutilizarlos en evaluación
+    os.makedirs("splits", exist_ok=True)
+    if not os.path.exists("splits/train_clip_files.npy") or not os.path.exists("splits/train_clip_files.npy"):
+        np.save("splits/train_clip_files.npy", train_clip_files)
+        np.save("splits/test_clip_files.npy", test_clip_files)
+    else:
+        print("Indices ya existentes. Se usará la separación previa.")  
+
+    # Dataset completo (por fragmento para entrenamiento, per_clip=False)
+    train_dataset = LipToMelDataset(
         mouth_folder="DataProcessed/Mouth",
         mel_folder="DataProcessed/Mel",
         frame_len=5,
         mel_len=6,
-        stride=1
+        stride=1,
+        per_clip=False, 
+        selected_files = train_clip_files
     )
 
-    import os 
-    num_workers = os.cpu_count()-1
-    print(f"num_workers: {num_workers}")
-
-    dataloader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers = num_workers)
-
-    print("datos cargados")
+    train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=os.cpu_count() - 1)
+    print("Datos cargados correctamente")
 
     model = LipToMel_Transformer(frame_size=(50, 100)).to(device)
+    model_path = "lip_to_mel_best.pt"
+    best_loss_path = "best_loss.txt"
+    best_loss = float('inf')
 
-    criterion = nn.L1Loss() #in torch L1Loss is the mean absolute error
+    # ---------------------------
+    # Cargar modelo anterior si se desea
+    # ---------------------------
+    if os.path.exists(model_path) and CONTINUAR_ENTRENAMIENTO:
+        print(f"Cargando modelo desde {model_path}")
+        model.load_state_dict(torch.load(model_path))
+        if os.path.exists(best_loss_path):
+            with open(best_loss_path, "r") as f:
+                best_loss = float(f.read().strip())
+            print(f"best_loss cargado: {best_loss:.6f}")
+        else:
+            best_loss = 9999
+    elif not CONTINUAR_ENTRENAMIENTO:
+        print("ENTRENAMIENTO FORZADO DESDE CERO (CONTINUAR_ENTRENAMIENTO=False)")
+    else:
+        print("No hay modelo previo. Entrenamiento desde cero.")
+
+    # ---------------------------
+    # Configuración
+    # ---------------------------
+    criterion = nn.L1Loss()
     optimizer = optim.Adam(model.parameters(), lr=1e-4)
-
-    print("inicando entrenamiento")
-
-    import sys
-    import datetime
 
     print("="*50)
     print(f"🕐 Fecha y hora de inicio: {datetime.datetime.now()}")
     print(f"🖥️  Python ejecutado desde: {sys.executable}")
     print(f"💾 CUDA disponible: {torch.cuda.is_available()}")
-    print(f"💻 Dispositivo en uso: {'cuda' if torch.cuda.is_available() else 'cpu'}")
+    print(f"💻 Dispositivo en uso: {device}")
     print("="*50)
 
-    best_loss = float('inf')
+    # ---------------------------
+    # Entrenamiento
+    # ---------------------------
+    losses_por_epoca = []
 
     for epoch in range(50):
         model.train()
         total_loss = 0.0
 
-        for frames, mels_norm, _, _ in dataloader:  # Ignora mean y std
+        for frames, mels_norm in train_dataloader:
             frames, mels_norm = frames.to(device), mels_norm.to(device)
             optimizer.zero_grad()
             outputs = model(frames)
             loss = criterion(outputs, mels_norm)
             loss.backward()
             optimizer.step()
+            total_loss += loss.item()
 
-
-        avg_loss = total_loss / len(dataloader)
-        print(f"Epoch [{epoch+1}/50] - Loss: {avg_loss:.6f}")
+        avg_loss = total_loss / len(train_dataloader)
+        losses_por_epoca.append(avg_loss)
+        print(f"📉 Epoch [{epoch+1}/50] - Loss: {avg_loss:.6f}")
 
         if avg_loss < best_loss:
             best_loss = avg_loss
-            torch.save(model.state_dict(), "lip_to_mel_best.pt")
-            print(f"Nuevo mejor modelo guardado (loss: {best_loss:.4f})")
+            torch.save(model.state_dict(), model_path)
+            with open(best_loss_path, "w") as f:
+                f.write(str(best_loss))
+            print(f"✅ Nuevo mejor modelo guardado (loss: {best_loss:.4f})")
+
+    output_dir = "outputs"
+    os.makedirs(output_dir, exist_ok=True)
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(losses_por_epoca, marker='o', label="Loss por época")
+    plt.xlabel("Época")
+    plt.ylabel("Pérdida promedio (L1)")
+    plt.title("Evolución del Loss durante el entrenamiento")
+    plt.grid(True)
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "loss_evolucion.png"))
+    plt.close()
