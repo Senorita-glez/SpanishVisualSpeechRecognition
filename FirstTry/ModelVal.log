@@ -1,0 +1,105 @@
+nohup: ignoring input
+Total de clips: 345
+Clips de entrenamiento: 276
+Clips de validación: 34
+Clips de prueba: 35
+Datos cargados correctamente
+ENTRENAMIENTO FORZADO DESDE CERO (CONTINUAR_ENTRENAMIENTO=False)
+==================================================
+🕐 Fecha y hora de inicio: 2025-05-18 22:08:14.702210
+🖥️  Python ejecutado desde: /opt/miniconda3/bin/python
+💾 CUDA disponible: True
+💻 Dispositivo en uso: cuda
+==================================================
+📉 Epoch [1/50] - Loss train: 0.110847 | val: 0.103883
+✅ Nuevo mejor modelo guardado (val_loss: 0.1039)
+📉 Epoch [2/50] - Loss train: 0.100429 | val: 0.093920
+✅ Nuevo mejor modelo guardado (val_loss: 0.0939)
+📉 Epoch [3/50] - Loss train: 0.090663 | val: 0.085262
+✅ Nuevo mejor modelo guardado (val_loss: 0.0853)
+📉 Epoch [4/50] - Loss train: 0.080890 | val: 0.076514
+✅ Nuevo mejor modelo guardado (val_loss: 0.0765)
+📉 Epoch [5/50] - Loss train: 0.073011 | val: 0.068516
+✅ Nuevo mejor modelo guardado (val_loss: 0.0685)
+📉 Epoch [6/50] - Loss train: 0.067429 | val: 0.063147
+✅ Nuevo mejor modelo guardado (val_loss: 0.0631)
+📉 Epoch [7/50] - Loss train: 0.063201 | val: 0.060620
+✅ Nuevo mejor modelo guardado (val_loss: 0.0606)
+📉 Epoch [8/50] - Loss train: 0.059918 | val: 0.057649
+✅ Nuevo mejor modelo guardado (val_loss: 0.0576)
+📉 Epoch [9/50] - Loss train: 0.057400 | val: 0.054835
+✅ Nuevo mejor modelo guardado (val_loss: 0.0548)
+📉 Epoch [10/50] - Loss train: 0.055417 | val: 0.053395
+✅ Nuevo mejor modelo guardado (val_loss: 0.0534)
+📉 Epoch [11/50] - Loss train: 0.053768 | val: 0.052214
+✅ Nuevo mejor modelo guardado (val_loss: 0.0522)
+📉 Epoch [12/50] - Loss train: 0.052465 | val: 0.050672
+✅ Nuevo mejor modelo guardado (val_loss: 0.0507)
+📉 Epoch [13/50] - Loss train: 0.051382 | val: 0.049672
+✅ Nuevo mejor modelo guardado (val_loss: 0.0497)
+📉 Epoch [14/50] - Loss train: 0.050416 | val: 0.048885
+✅ Nuevo mejor modelo guardado (val_loss: 0.0489)
+📉 Epoch [15/50] - Loss train: 0.049591 | val: 0.048402
+✅ Nuevo mejor modelo guardado (val_loss: 0.0484)
+📉 Epoch [16/50] - Loss train: 0.048914 | val: 0.047770
+✅ Nuevo mejor modelo guardado (val_loss: 0.0478)
+📉 Epoch [17/50] - Loss train: 0.048270 | val: 0.047014
+✅ Nuevo mejor modelo guardado (val_loss: 0.0470)
+📉 Epoch [18/50] - Loss train: 0.047726 | val: 0.046778
+✅ Nuevo mejor modelo guardado (val_loss: 0.0468)
+📉 Epoch [19/50] - Loss train: 0.047207 | val: 0.046173
+✅ Nuevo mejor modelo guardado (val_loss: 0.0462)
+📉 Epoch [20/50] - Loss train: 0.046765 | val: 0.045656
+✅ Nuevo mejor modelo guardado (val_loss: 0.0457)
+📉 Epoch [21/50] - Loss train: 0.046355 | val: 0.045761
+📉 Epoch [22/50] - Loss train: 0.045965 | val: 0.045036
+✅ Nuevo mejor modelo guardado (val_loss: 0.0450)
+📉 Epoch [23/50] - Loss train: 0.045618 | val: 0.044738
+✅ Nuevo mejor modelo guardado (val_loss: 0.0447)
+📉 Epoch [24/50] - Loss train: 0.045289 | val: 0.044289
+✅ Nuevo mejor modelo guardado (val_loss: 0.0443)
+📉 Epoch [25/50] - Loss train: 0.044971 | val: 0.044036
+✅ Nuevo mejor modelo guardado (val_loss: 0.0440)
+📉 Epoch [26/50] - Loss train: 0.044700 | val: 0.043971
+✅ Nuevo mejor modelo guardado (val_loss: 0.0440)
+📉 Epoch [27/50] - Loss train: 0.044433 | val: 0.043619
+✅ Nuevo mejor modelo guardado (val_loss: 0.0436)
+📉 Epoch [28/50] - Loss train: 0.044207 | val: 0.043224
+✅ Nuevo mejor modelo guardado (val_loss: 0.0432)
+📉 Epoch [29/50] - Loss train: 0.043969 | val: 0.043692
+📉 Epoch [30/50] - Loss train: 0.043771 | val: 0.043044
+✅ Nuevo mejor modelo guardado (val_loss: 0.0430)
+📉 Epoch [31/50] - Loss train: 0.043548 | val: 0.043014
+✅ Nuevo mejor modelo guardado (val_loss: 0.0430)
+📉 Epoch [32/50] - Loss train: 0.043350 | val: 0.042909
+✅ Nuevo mejor modelo guardado (val_loss: 0.0429)
+📉 Epoch [33/50] - Loss train: 0.043170 | val: 0.042368
+✅ Nuevo mejor modelo guardado (val_loss: 0.0424)
+📉 Epoch [34/50] - Loss train: 0.042999 | val: 0.042307
+✅ Nuevo mejor modelo guardado (val_loss: 0.0423)
+📉 Epoch [35/50] - Loss train: 0.042809 | val: 0.042033
+✅ Nuevo mejor modelo guardado (val_loss: 0.0420)
+📉 Epoch [36/50] - Loss train: 0.042658 | val: 0.042154
+📉 Epoch [37/50] - Loss train: 0.042487 | val: 0.042292
+📉 Epoch [38/50] - Loss train: 0.042356 | val: 0.041729
+✅ Nuevo mejor modelo guardado (val_loss: 0.0417)
+📉 Epoch [39/50] - Loss train: 0.042215 | val: 0.041519
+✅ Nuevo mejor modelo guardado (val_loss: 0.0415)
+📉 Epoch [40/50] - Loss train: 0.042073 | val: 0.041419
+✅ Nuevo mejor modelo guardado (val_loss: 0.0414)
+📉 Epoch [41/50] - Loss train: 0.041940 | val: 0.041191
+✅ Nuevo mejor modelo guardado (val_loss: 0.0412)
+📉 Epoch [42/50] - Loss train: 0.041816 | val: 0.041079
+✅ Nuevo mejor modelo guardado (val_loss: 0.0411)
+📉 Epoch [43/50] - Loss train: 0.041702 | val: 0.041233
+📉 Epoch [44/50] - Loss train: 0.041583 | val: 0.040956
+✅ Nuevo mejor modelo guardado (val_loss: 0.0410)
+📉 Epoch [45/50] - Loss train: 0.041480 | val: 0.040705
+✅ Nuevo mejor modelo guardado (val_loss: 0.0407)
+📉 Epoch [46/50] - Loss train: 0.041364 | val: 0.040635
+✅ Nuevo mejor modelo guardado (val_loss: 0.0406)
+📉 Epoch [47/50] - Loss train: 0.041259 | val: 0.040642
+📉 Epoch [48/50] - Loss train: 0.041160 | val: 0.040424
+✅ Nuevo mejor modelo guardado (val_loss: 0.0404)
+📉 Epoch [49/50] - Loss train: 0.041078 | val: 0.040637
+📉 Epoch [50/50] - Loss train: 0.040984 | val: 0.040532

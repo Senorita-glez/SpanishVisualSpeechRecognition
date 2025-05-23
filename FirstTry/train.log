@@ -1,0 +1,112 @@
+nohup: ignoring input
+Total de clips: 345
+Clips de entrenamiento: 276
+Clips de prueba: 69
+Datos cargados correctamente
+ENTRENAMIENTO FORZADO DESDE CERO (CONTINUAR_ENTRENAMIENTO=False)
+==================================================
+🕐 Fecha y hora de inicio: 2025-05-13 01:22:45.518756
+🖥️  Python ejecutado desde: /home/jesusgr/miniconda3/envs/daphne/bin/python
+💾 CUDA disponible: True
+💻 Dispositivo en uso: cuda
+==================================================
+📉 Epoch [1/50] - Loss: 0.567993
+✅ Nuevo mejor modelo guardado (loss: 0.5680)
+📉 Epoch [2/50] - Loss: 0.527241
+✅ Nuevo mejor modelo guardado (loss: 0.5272)
+📉 Epoch [3/50] - Loss: 0.491994
+✅ Nuevo mejor modelo guardado (loss: 0.4920)
+📉 Epoch [4/50] - Loss: 0.451115
+✅ Nuevo mejor modelo guardado (loss: 0.4511)
+📉 Epoch [5/50] - Loss: 0.412534
+✅ Nuevo mejor modelo guardado (loss: 0.4125)
+📉 Epoch [6/50] - Loss: 0.379797
+✅ Nuevo mejor modelo guardado (loss: 0.3798)
+📉 Epoch [7/50] - Loss: 0.353748
+✅ Nuevo mejor modelo guardado (loss: 0.3537)
+📉 Epoch [8/50] - Loss: 0.333024
+✅ Nuevo mejor modelo guardado (loss: 0.3330)
+📉 Epoch [9/50] - Loss: 0.315722
+✅ Nuevo mejor modelo guardado (loss: 0.3157)
+📉 Epoch [10/50] - Loss: 0.301397
+✅ Nuevo mejor modelo guardado (loss: 0.3014)
+📉 Epoch [11/50] - Loss: 0.289328
+✅ Nuevo mejor modelo guardado (loss: 0.2893)
+📉 Epoch [12/50] - Loss: 0.279561
+✅ Nuevo mejor modelo guardado (loss: 0.2796)
+📉 Epoch [13/50] - Loss: 0.271323
+✅ Nuevo mejor modelo guardado (loss: 0.2713)
+📉 Epoch [14/50] - Loss: 0.264253
+✅ Nuevo mejor modelo guardado (loss: 0.2643)
+📉 Epoch [15/50] - Loss: 0.258462
+✅ Nuevo mejor modelo guardado (loss: 0.2585)
+📉 Epoch [16/50] - Loss: 0.253514
+✅ Nuevo mejor modelo guardado (loss: 0.2535)
+📉 Epoch [17/50] - Loss: 0.249029
+✅ Nuevo mejor modelo guardado (loss: 0.2490)
+📉 Epoch [18/50] - Loss: 0.245086
+✅ Nuevo mejor modelo guardado (loss: 0.2451)
+📉 Epoch [19/50] - Loss: 0.241505
+✅ Nuevo mejor modelo guardado (loss: 0.2415)
+📉 Epoch [20/50] - Loss: 0.238521
+✅ Nuevo mejor modelo guardado (loss: 0.2385)
+📉 Epoch [21/50] - Loss: 0.235520
+✅ Nuevo mejor modelo guardado (loss: 0.2355)
+📉 Epoch [22/50] - Loss: 0.233178
+✅ Nuevo mejor modelo guardado (loss: 0.2332)
+📉 Epoch [23/50] - Loss: 0.230793
+✅ Nuevo mejor modelo guardado (loss: 0.2308)
+📉 Epoch [24/50] - Loss: 0.228591
+✅ Nuevo mejor modelo guardado (loss: 0.2286)
+📉 Epoch [25/50] - Loss: 0.226575
+✅ Nuevo mejor modelo guardado (loss: 0.2266)
+📉 Epoch [26/50] - Loss: 0.224843
+✅ Nuevo mejor modelo guardado (loss: 0.2248)
+📉 Epoch [27/50] - Loss: 0.223053
+✅ Nuevo mejor modelo guardado (loss: 0.2231)
+📉 Epoch [28/50] - Loss: 0.221550
+✅ Nuevo mejor modelo guardado (loss: 0.2215)
+📉 Epoch [29/50] - Loss: 0.219920
+✅ Nuevo mejor modelo guardado (loss: 0.2199)
+📉 Epoch [30/50] - Loss: 0.218532
+✅ Nuevo mejor modelo guardado (loss: 0.2185)
+📉 Epoch [31/50] - Loss: 0.217276
+✅ Nuevo mejor modelo guardado (loss: 0.2173)
+📉 Epoch [32/50] - Loss: 0.216029
+✅ Nuevo mejor modelo guardado (loss: 0.2160)
+📉 Epoch [33/50] - Loss: 0.214879
+✅ Nuevo mejor modelo guardado (loss: 0.2149)
+📉 Epoch [34/50] - Loss: 0.213787
+✅ Nuevo mejor modelo guardado (loss: 0.2138)
+📉 Epoch [35/50] - Loss: 0.212630
+✅ Nuevo mejor modelo guardado (loss: 0.2126)
+📉 Epoch [36/50] - Loss: 0.211589
+✅ Nuevo mejor modelo guardado (loss: 0.2116)
+📉 Epoch [37/50] - Loss: 0.210709
+✅ Nuevo mejor modelo guardado (loss: 0.2107)
+📉 Epoch [38/50] - Loss: 0.209827
+✅ Nuevo mejor modelo guardado (loss: 0.2098)
+📉 Epoch [39/50] - Loss: 0.208803
+✅ Nuevo mejor modelo guardado (loss: 0.2088)
+📉 Epoch [40/50] - Loss: 0.208054
+✅ Nuevo mejor modelo guardado (loss: 0.2081)
+📉 Epoch [41/50] - Loss: 0.207267
+✅ Nuevo mejor modelo guardado (loss: 0.2073)
+📉 Epoch [42/50] - Loss: 0.206416
+✅ Nuevo mejor modelo guardado (loss: 0.2064)
+📉 Epoch [43/50] - Loss: 0.205663
+✅ Nuevo mejor modelo guardado (loss: 0.2057)
+📉 Epoch [44/50] - Loss: 0.204945
+✅ Nuevo mejor modelo guardado (loss: 0.2049)
+📉 Epoch [45/50] - Loss: 0.204290
+✅ Nuevo mejor modelo guardado (loss: 0.2043)
+📉 Epoch [46/50] - Loss: 0.203649
+✅ Nuevo mejor modelo guardado (loss: 0.2036)
+📉 Epoch [47/50] - Loss: 0.202979
+✅ Nuevo mejor modelo guardado (loss: 0.2030)
+📉 Epoch [48/50] - Loss: 0.202327
+✅ Nuevo mejor modelo guardado (loss: 0.2023)
+📉 Epoch [49/50] - Loss: 0.201899
+✅ Nuevo mejor modelo guardado (loss: 0.2019)
+📉 Epoch [50/50] - Loss: 0.201198
+✅ Nuevo mejor modelo guardado (loss: 0.2012)
