@@ -1,264 +1,173 @@
 import os
-import skvideo.io
 import numpy as np
-import mediapipe as mp
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-import cv2
-import multiprocessing
-import json
-import numpy as np
-import cv2
-import skvideo.io
-import os
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
-import mediapipe as mp
+import torch
+import matplotlib.pyplot as plt
+from torch.utils.data import DataLoader
+from ModelAndData import LipToMel_Transformer, LipToMelDataset
+import csv
+from skimage.metrics import structural_similarity as ssim
 
-np.int = int 
-np.float = float
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+test_clip_files = np.load("splits/test_clip_files.npy")
 
-class VideoProcessor:
-    def __init__(self, path):
-        self.video_path = path
-        self.mouth_frames = []
-        self.face_frames = []
-        self.min_detected_frames = 10  # mínimo para considerar válido
+full_dataset = LipToMelDataset(
+    mouth_folder="DataProcessed/Mouth",
+    mel_folder="DataProcessed/Mel",
+    frame_len=5,
+    mel_len=6,
+    stride=1,
+    per_clip=True,
+    selected_files=test_clip_files
+)
 
-        base_options = python.BaseOptions(model_asset_path='models/face_landmarker_v2_with_blendshapes.task')
-        self.detector = vision.FaceLandmarker.create_from_options(
+test_dataloader = DataLoader(full_dataset, batch_size=1, shuffle=False, num_workers=os.cpu_count() - 1)
 
-            vision.FaceLandmarkerOptions(
-                base_options=base_options,
-                output_face_blendshapes=False,  
-                output_facial_transformation_matrixes=True,
-                num_faces=1
-            )
-        )
+model = LipToMel_Transformer(frame_size=(50, 100))
+model.load_state_dict(torch.load("lip_to_mel_best.pt", map_location=device))
+model = model.to(device)
+model.eval()
 
-    def getFileName(self):
-        """Returns the filename of the video."""
-        return os.path.basename(self.video_path)
-    
-    def temporal_resample(self, frames, target_frames=256):
-        """Interpola la secuencia de frames a target_frames"""
-        num_frames = len(frames)
-        indices = np.linspace(0, num_frames - 1, target_frames).astype(np.float32)
-        resampled_frames = []
+# Cargar estadísticas de normalización
+stats_path = "DataProcessed/global_stats.txt"
+assert os.path.exists(stats_path), "No se encontró el archivo de estadísticas globales."
+with open(stats_path, "r") as f:
+    lines = f.readlines()
+    if len(lines) < 5:
+        raise ValueError("Archivo global_stats.txt incompleto.")
+    global_std = float(lines[0].strip())
+    global_mean = float(lines[1].strip())
+    global_max = float(lines[2].strip())
+    global_min = float(lines[3].strip())
+    global_subs = float(lines[4].strip())
 
-        for i in indices:
-            lower = int(np.floor(i))
-            upper = min(lower + 1, num_frames - 1)
-            alpha = i - lower
-            frame = (1 - alpha) * frames[lower] + alpha * frames[upper]
-            resampled_frames.append(frame)
+print(f"📊 Global mean: {global_mean:.4f}, std: {global_std:.4f}")
 
-        return np.array(resampled_frames)
+def reconstruct_full_mel_clip(frames, model, frame_len=5, mel_len=6, stride=1):
+    B, C, T, H, W = frames.shape
+    mel_pred = torch.zeros((B, 1, 80, T)).to(device)
+    mel_count = torch.zeros((B, 1, 80, T)).to(device)
+    with torch.no_grad():
+        for i in range(0, T - frame_len + 1, stride):
+            frames_window = frames[:, :, i:i+frame_len]
+            mel_out = model(frames_window)
+            mel_out = mel_out[:, :, :, :min(mel_len, T - i)]
+            mel_pred[:, :, :, i:i+mel_out.shape[-1]] += mel_out
+            mel_count[:, :, :, i:i+mel_out.shape[-1]] += 1.0
+    mel_count[mel_count == 0] = 1.0
+    return mel_pred / mel_count
 
-    def normalize_frames(self, frames):
-        """Normaliza cada frame (z-score)."""
-        norm_frames = []
-        for frame in frames:
-            mean = np.mean(frame)
-            std = np.std(frame) if np.std(frame) > 0 else 1.0
-            norm_frame = (frame - mean) / std
-            norm_frames.append(norm_frame)
-        return np.array(norm_frames)
+def l1_loss(pred, gt):
+    return torch.mean(torch.abs(pred - gt)).item()
 
-    def process_video(self):
-        self.mouth_frames = []
-        self.face_frames = []
+def l2_loss(pred, gt):
+    return torch.mean((pred - gt) ** 2).item()
 
-        videogen = skvideo.io.vreader(self.video_path)
+def snr(pred, gt):
+    signal_power = torch.sum(gt ** 2)
+    noise_power = torch.sum((gt - pred) ** 2) + 1e-8
+    return 10 * torch.log10(signal_power / noise_power).item()
 
-        for frame in videogen:
-            gray_frame = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            detection_result = self.detect_face(frame)
-            if detection_result is None:
-                continue
+def ssim_score(pred, gt):
+    pred_np = pred.squeeze().cpu().numpy()
+    gt_np = gt.squeeze().cpu().numpy()
+    score, _ = ssim(pred_np, gt_np, full=True, data_range=1.0)
+    return score
 
-            mouth_crop = self.extract_mouth(gray_frame, detection_result)
-            face_crop = self.extract_face(gray_frame, detection_result)
+# Métricas y control
+total_l1 = total_l2 = total_snr = total_ssim = n = 0
+best_snr, worst_snr = -float('inf'), float('inf')
+best_clip, worst_clip = -1, -1
+os.makedirs("outputs", exist_ok=True)
 
-            if face_crop is not None:
-                self.face_frames.append(face_crop)
-            if mouth_crop is not None:
-                self.mouth_frames.append(mouth_crop)
+best_metrics = {
+    "l1": {"val": float("inf"), "idx": -1, "mel": None, "gt": None},
+    "l2": {"val": float("inf"), "idx": -1, "mel": None, "gt": None},
+    "snr": {"val": -float("inf"), "idx": -1, "mel": None, "gt": None},
+    "ssim": {"val": -float("inf"), "idx": -1, "mel": None, "gt": None}
+}
 
-        if len(self.mouth_frames) < self.min_detected_frames or len(self.face_frames) < self.min_detected_frames:
-            print(f"[{self.video_path}] Descartado por pocos frames detectados (mouth: {len(self.mouth_frames)}, face: {len(self.face_frames)})")
-            return np.array([]), np.array([])
+csv_path = os.path.join("outputs", "clip_metrics.csv")
+with open(csv_path, "w", newline="") as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(["Clip", "L1 Loss", "L2 Loss", "SNR (dB)", "SSIM"])
 
-        # Normalización
-        self.mouth_frames = self.normalize_frames(self.mouth_frames)
-        self.face_frames = self.normalize_frames(self.face_frames)
+for idx, (frames, mels_norm) in enumerate(test_dataloader):
+    frames, mels_norm = frames.to(device), mels_norm.to(device)
+    mel_pred_norm = reconstruct_full_mel_clip(frames, model)
+    mel_pred = mel_pred_norm * global_subs + global_min
+    mel_gt = mels_norm * global_subs + global_min
+    T_pred = mel_pred.shape[-1]
+    mel_gt = mel_gt[..., :T_pred]
 
-        # Interpolación directa a 256
-        self.mouth_frames = self.temporal_resample(self.mouth_frames, target_frames=256)
-        self.face_frames = self.temporal_resample(self.face_frames, target_frames=256)
+    clip_l1 = l1_loss(mel_pred, mel_gt)
+    clip_l2 = l2_loss(mel_pred, mel_gt)
+    clip_snr = snr(mel_pred, mel_gt)
+    clip_ssim = ssim_score(mel_pred[0, 0], mel_gt[0, 0])
 
-        return self.mouth_frames, self.face_frames
+    total_l1 += clip_l1
+    total_l2 += clip_l2
+    total_snr += clip_snr
+    total_ssim += clip_ssim
+    n += 1
 
-    def detect_face(self, frame):
-        """Detects face landmarks in a grayscale frame using MediaPipe."""
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame)
-        detection_result = self.detector.detect(mp_image)
-        return detection_result if detection_result.face_landmarks else None
+    print(f"Clip {idx} - L1: {clip_l1:.4f} - L2: {clip_l2:.4f} - SNR: {clip_snr:.2f} dB - SSIM: {clip_ssim:.4f}")
 
-    def extract_face(self, image, detection_result, final_size=(100, 100)):
-        """Extracts the face region and resizes it to a fixed size."""
-        for face_landmarks in detection_result.face_landmarks:
-            img_height, img_width = image.shape
+    if clip_snr > best_snr:
+        best_snr = clip_snr
+        best_clip = idx
+    if clip_snr < worst_snr:
+        worst_snr = clip_snr
+        worst_clip = idx
 
-            x_min = int(min(landmark.x * img_width for landmark in face_landmarks))
-            x_max = int(max(landmark.x * img_width for landmark in face_landmarks))
-            y_min = int(min(landmark.y * img_height for landmark in face_landmarks))
-            y_max = int(max(landmark.y * img_height for landmark in face_landmarks))
+    for metric, value in zip(["l1", "l2", "snr", "ssim"], [clip_l1, clip_l2, clip_snr, clip_ssim]):
+        if ((metric in ["l1", "l2"] and value < best_metrics[metric]["val"]) or
+            (metric in ["snr", "ssim"] and value > best_metrics[metric]["val"])):
+            best_metrics[metric] = {
+                "val": value,
+                "idx": idx,
+                "mel": mel_pred[0, 0].cpu().numpy(),
+                "gt": mel_gt[0, 0].cpu().numpy()
+            }
 
-            if x_max <= x_min or y_max <= y_min:
-                return None
+    with open(csv_path, "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow([idx, f"{clip_l1:.6f}", f"{clip_l2:.6f}", f"{clip_snr:.2f}", f"{clip_ssim:.4f}"])
 
-            face_region = image[y_min:y_max, x_min:x_max]
-            resized_face = cv2.resize(face_region, final_size, interpolation=cv2.INTER_AREA)
+# Métricas globales
+avg_l1 = total_l1 / n
+avg_l2 = total_l2 / n
+avg_snr = total_snr / n
+avg_ssim = total_ssim / n
 
-            return resized_face  
+print("\nMétricas globales (dataset completo):")
+print(f"Avg L1 Loss: {avg_l1:.6f}")
+print(f"Avg L2 Loss: {avg_l2:.6f}")
+print(f"Avg SNR (dB): {avg_snr:.2f} dB")
+print(f"Avg SSIM: {avg_ssim:.4f}")
+print(f"\nMejor clip: {best_clip} con SNR = {best_snr:.2f} dB")
+print(f"Peor clip: {worst_clip} con SNR = {worst_snr:.2f} dB")
 
-    def extract_mouth(self, image, detection_result, target_size=(100, 50), margin_factor=0.2):
-        """Extracts the mouth region with additional margin while maintaining a 2:1 aspect ratio."""
-        MOUTH_LANDMARKS = [0, 37, 267, 39, 40, 41, 185, 61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291]
+with open(csv_path, "a", newline="") as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow([])
+    writer.writerow(["Promedios", f"{avg_l1:.6f}", f"{avg_l2:.6f}", f"{avg_snr:.2f}", f"{avg_ssim:.4f}"])
 
-        for face_landmarks in detection_result.face_landmarks:
-            img_height, img_width = image.shape
-            mouth_coords = [(int(landmark.x * img_width), int(landmark.y * img_height)) 
-                            for i, landmark in enumerate(face_landmarks) if i in MOUTH_LANDMARKS]
+# Comparación visual en una sola figura
+fig, axes = plt.subplots(4, 2, figsize=(12, 16))
+fig.suptitle("Comparación de mejores clips por métrica", fontsize=16)
+for i, metric in enumerate(["l1", "l2", "snr", "ssim"]):
+    pred = best_metrics[metric]["mel"]
+    gt = best_metrics[metric]["gt"]
+    if pred is not None and gt is not None:
+        axes[i, 0].imshow(pred, aspect='auto', origin='lower')
+        axes[i, 0].set_title(f"{metric.upper()} - Reconstruido")
+        axes[i, 1].imshow(gt, aspect='auto', origin='lower')
+        axes[i, 1].set_title(f"{metric.upper()} - Ground Truth")
+for ax in axes.flatten():
+    ax.label_outer()
+plt.tight_layout(rect=[0, 0.03, 1, 0.97])
+plt.savefig("outputs/comparacion_general.png")
+plt.close()
 
-            if not mouth_coords:
-                return None  
-
-            x_min, x_max = min(x for x, _ in mouth_coords), max(x for x, _ in mouth_coords)
-            y_min, y_max = min(y for _, y in mouth_coords), max(y for _, y in mouth_coords)
-
-            mouth_width, mouth_height = x_max - x_min, y_max - y_min
-            margin_w = int(mouth_width * margin_factor)
-            margin_h = int(mouth_height * margin_factor)
-
-            x_min = max(x_min - margin_w, 0)
-            x_max = min(x_max + margin_w, img_width)
-            y_min = max(y_min - margin_h, 0)
-            y_max = min(y_max + margin_h, img_height)
-
-            mouth_width, mouth_height = x_max - x_min, y_max - y_min
-
-            desired_width = max(mouth_width, 2 * mouth_height)
-            desired_height = desired_width // 2  
-
-            center_x, center_y = (x_max + x_min) // 2, (y_max + y_min) // 2
-
-            x_min_new = max(center_x - desired_width // 2, 0)
-            x_max_new = min(center_x + desired_width // 2, img_width)
-            y_min_new = max(center_y - desired_height // 2, 0)
-            y_max_new = min(center_y + desired_height // 2, img_height)
-
-            mouth_region = image[y_min_new:y_max_new, x_min_new:x_max_new]
-            resized_mouth = cv2.resize(mouth_region, target_size, interpolation=cv2.INTER_AREA)
-
-            return resized_mouth
-
-    def saveFaceFramesNumpy(self, output_file="face_frames.npz"):
-        """Guarda los frames de la cara con padding al final si es necesario."""
-        print(f"Saved face frames as {output_file}, Shape: {self.face_frames.shape}")
-        np.savez_compressed(output_file, face_frames=self.face_frames)
-
-    def saveMouthFramesNumpy(self, output_file="mouth_frames.npz"):
-        """Guarda los frames de la boca con padding al final si es necesario."""
-        np.savez_compressed(output_file, mouth_frames=self.mouth_frames)
-        
-
-def get_filtered_subclip_paths(file_path, min_duration=1, max_duration=9):
-    with open(file_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
-
-    # Extraer subclips con sus duraciones
-    filtered_subclip_paths = []
-    for video in data["videos"]:
-        subclips = video["video_metadata"]["subclips"]
-        for clip_path, clip_data in subclips.items():
-            if min_duration <= clip_data["duration"] <= max_duration:
-                filtered_subclip_paths.append(clip_path)
-
-    # Retornar la porción solicitada de la lista
-    return filtered_subclip_paths
-
-json_file = "./Data/videos_metadata.json"
-output_dirMouth = "./DataProcessed/Mouth"
-output_dirFace = "./DataProcessed/Face"
-
-list_of_videos = get_filtered_subclip_paths(json_file)
-num_processes = min(multiprocessing.cpu_count(), len(list_of_videos))  
-
-# Usamos un Manager para manejar el Lock de manera segura
-manager = multiprocessing.Manager()
-lock = manager.Lock()
-
-def process_video_parallel(video_path):
-    """Procesa un video y guarda los frames de bocas y caras en archivos npz separados."""
-    video_processor = VideoProcessor(video_path)
-    processed_mouths, processed_faces = video_processor.process_video()
-
-    if len(processed_mouths) > 0 and len(processed_faces) > 0:
-        # Crear carpeta de salida por video
-        video_name = os.path.splitext(os.path.basename(video_path))[0]
-        os.makedirs(output_dirMouth, exist_ok=True)
-        os.makedirs(output_dirFace, exist_ok=True)
-
-        # Rutas de los archivos npz
-        mouth_npy = os.path.join(output_dirMouth, f"{video_name}_mouth.npz")
-        face_npy = os.path.join(output_dirFace, f"{video_name}_face.npz")
-
-        # Guardar los frames de bocas y caras en archivos npz 
-        video_processor.saveFaceFramesNumpy(face_npy)
-        video_processor.saveMouthFramesNumpy(mouth_npy)
-
-        # Obtener el FPS del video
-        cap = cv2.VideoCapture(video_path)
-        fps = cap.get(cv2.CAP_PROP_FPS)
-        cap.release()  # Liberar el video después de obtener el FPS
-
-        # Bloquear escritura para evitar corrupción de datos en JSON
-        with lock:
-            print(f"[{video_path}] Mouth frames: {len(processed_mouths)}, Face frames: {len(processed_faces)}, FPS: {fps}")
-
-            # Leer el JSON existente
-            if os.path.exists(json_file):
-                with open(json_file, "r") as f:
-                    metadata = json.load(f)
-            else:
-                print("El archivo JSON no existe.")
-                return  # Si no hay JSON, no se puede actualizar
-
-            # Buscar el video correcto en la estructura del JSON
-            updated = False
-            for video_entry in metadata["videos"]:
-                subclips = video_entry["video_metadata"].get("subclips", {})
-                if video_path in subclips:
-                    subclips[video_path]["mouth_numpy"] = mouth_npy
-                    subclips[video_path]["face_numpy"] = face_npy
-                    subclips[video_path]["fps"] = fps  # Agregar el fps al subclip
-                    updated = True
-                    break  # Salimos del loop, ya que encontramos y actualizamos el clip
-
-            if not updated:
-                print(f"Advertencia: No se encontró {video_path} en el JSON, no se actualizó.")
-
-            # Escribir de vuelta el JSON con la actualización
-            with open(json_file, "w") as f:
-                json.dump(metadata, f, indent=4)
-
-    else:
-        print(f"[{video_path}] No faces or mouths detected.")
-
-
-if __name__ == "__main__":
-    with multiprocessing.Pool(num_processes) as pool:
-        pool.map(process_video_parallel, list_of_videos)
-
+print("✅ Comparación visual guardada en outputs/comparacion_general.png")
+print("✅ Métricas guardadas en outputs/clip_metrics.csv")

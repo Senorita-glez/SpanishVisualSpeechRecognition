@@ -7,9 +7,11 @@ import whisper
 import ffmpeg
 import torch
 import time
+
 torch.cuda.empty_cache()
 import threading
 original_torch_load = torch.load
+folder_path = "./Data"
 
 def safe_torch_load(*args, **kwargs):
     kwargs["weights_only"] = True  # Ensures weights-only loading when possible
@@ -38,7 +40,6 @@ def transcribe_with_timestamps(file_path):
     # Extract segments with timestamps
     segments = result["segments"]
     return segments
-import whisper
 
 def transcribe_with_word_timestamps(file_path):
     # Load Whisper model
@@ -62,7 +63,7 @@ def save_as_txt_with_seconds(segments, output_file):
             txt_file.write(f"{start_time:.3f},{end_time:.3f} -> {text}\n")
 
 def get_subtitles(path_video, number, lock):
-    output_audio = f"./Data/video{number}/audio{number}.wav"
+    output_audio = f"{folder_path}/video{number}/audio{number}.wav"
     output_txt = f"./Data/video{number}/timestamps{number}.txt"
 
     with lock:  # Prevent multiple threads from writing at the same time
@@ -373,7 +374,7 @@ def create_dataset():
     
     PLxep90LjGgt8bqPpkMv4d81zLibPEq_lE  # Playlist de videos de Persona8
     '''
-    links = fromPlaylistToLinks("https://www.youtube.com/playlist?list=PLxep90LjGgt8eSZivlAa-Xzq2e9r1QUPk")
+    links = fromPlaylistToLinks("https://www.youtube.com/playlist?list=PLxep90LjGgt8ipF2bO5LPWKigA4ckBlyh")
     # Crear la carpeta si no existe
     os.makedirs(folder_path, exist_ok=True)
 

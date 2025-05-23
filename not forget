@@ -1,0 +1,15 @@
+! sudo apt-get install ffmpeg
+
+#for aenas 
+sudo apt update
+sudo apt install -y espeak libespeak-dev ffmpeg python3-pip python3-dev python3-setuptools python3-numpy python3-lxml libxml2 libxslt1-dev libffi-dev
+
+#for import skvideo.io need
+pip install numpy==1.23.5
+conda install -c conda-forge numpy=1.23.5
+
+#for get data from web
+curl -L -u daphneglez:bffde440c000a3c2da5ce69662b91d0f\
+  -o ~/Downloads/visual-speech-recognition-mexican-spanish.zip\
+  https://www.kaggle.com/api/v1/datasets/download/daphneglez/visual-speech-recognition-mexican-spanish
+
